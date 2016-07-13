@@ -136,7 +136,7 @@ concatTokens = go Nil
 
 
 
--- | Once we have a list of BBStr's, turn them decimalo one BBStr
+-- | Once we have a list of BBStr's, turn them into one BBStr
 --
 concatBBStr :: List Token -> Token
 concatBBStr = BBStr <$> Text.concat <<< map go <<< List.filter isBBStr
