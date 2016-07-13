@@ -11,6 +11,7 @@ import           Data.BBCode.Internal
 import           Data.BBCode.Parser
 import           Data.BBCode.Types
 import           Test.Hspec
+import qualified Data.Text as Text
 
 
 
@@ -120,3 +121,66 @@ spec = do
 
       parseBBCode "[b]hello[/b]"
         `shouldBe` (Right $ Cons (Bold (Cons (Text "hello") Nil)) Nil)
+
+      parseBBCode "[b]https://adarq.org[/b]"
+        `shouldBe` (Right $ Cons (Bold (Cons (Text "https://adarq.org") Nil)) Nil)
+
+      parseBBCode "[u][b]hello[/b][/u]"
+        `shouldBe` (Right $ Cons (Underline (Cons (Bold (Cons (Text "hello") Nil)) Nil)) Nil)
+
+      parseBBCode "[i][u][b]hello[/b][/u][/i]"
+        `shouldBe` (Right $ Cons (Italic (Cons (Underline (Cons (Bold (Cons (Text "hello") Nil)) Nil)) Nil)) Nil)
+
+      parseBBCode "ping[b]hello[/b]pong"
+        `shouldBe`
+          (Right $
+            Cons
+              (Text "ping")
+              (Cons
+                (Bold (Cons (Text "hello") Nil))
+              (Cons (Text "pong") Nil))
+          )
+
+      parseBBCode "zero[u]one[b]two[/b]three[/u]four"
+        `shouldBe` (Right (Cons (Text("zero")) (Cons (Underline(Cons (Text("one")) (Cons (Bold(Cons (Text("two")) (Nil))) (Cons (Text("three")) (Nil))))) (Cons (Text("four")) (Nil)))))
+
+      parseBBCode "[youtube]https://www.youtube.com/watch?v=video[/youtube]"
+        `shouldBe` (Right (Cons (Youtube "https://www.youtube.com/watch?v=video") Nil))
+
+      parseBBCode "[hr]"
+        `shouldBe` (Right (Cons HR Nil))
+
+      parseBBCode "\n"
+        `shouldBe` (Right (Cons NL Nil))
+
+      parseBBCode "\n\n"
+        `shouldBe` (Right (Cons NL (Cons NL Nil)))
+
+      parseBBCode "hi\n"
+        `shouldBe` (Right (Cons (Text "hi") (Cons NL Nil)))
+
+      parseBBCode "\nhi"
+        `shouldBe` (Right (Cons NL (Cons (Text "hi") Nil)))
+
+      parseBBCode "I am the [b]best[/b] man, I [b]deed[/b] it. [b]yup[/b]"
+        `shouldBe`
+          (Right (Cons (Text("I am the ")) (Cons (Bold(Cons (Text("best")) (Nil))) (Cons (Text(" man, I ")) (Cons (Bold(Cons (Text("deed")) (Nil))) (Cons (Text(" it. ")) (Cons (Bold(Cons (Text("yup")) (Nil))) (Nil))))))))
+
+      parseBBCode "[url=someUrl]name[/url]"
+        `shouldBe` (Right $ Cons (Link (Just "name") "someUrl") Nil)
+
+      let
+        bigString n      = Text.replicate n 'A')
+        big_string_1024  = bigString 1024
+        big_string_10024 = bigString 10024
+
+      parseBBCode $ "[b]" <> big_string_1024 <> "[/b]"
+        `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_1024) Nil)) Nil)
+
+      parseBBCode $ "[b]" <> big_string_10024 <> "[/b]"
+        `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_10024) Nil)) Nil)
+
+
+--    Assert.equal
+--      (Right $ Cons ..
+--      $ parseBBCode "[quote author=adarqui]hello[/quote]"
