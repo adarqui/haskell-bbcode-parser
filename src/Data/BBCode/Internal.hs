@@ -1,8 +1,17 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 module Data.BBCode.Internal (
   Unit,
   List,
+  Nil,
   Tuple,
   tuple,
+  pattern Tuple,
+  pattern Cons,
+  pattern Nil,
+  Boolean,
+  true,
+  false,
   (<<<)
 ) where
 
@@ -10,7 +19,9 @@ module Data.BBCode.Internal (
 
 type Unit      = ()
 type List a    = [a]
+type Nil       = []
 type Tuple a b = (a, b)
+type Boolean   = Bool
 
 
 
@@ -24,3 +35,16 @@ infixr 9 <<<
 
 
 
+pattern Tuple a b = (a, b)
+pattern Cons a a' = (:) a a'
+pattern Nil       = []
+
+
+
+true :: Boolean
+true = True
+
+
+
+false :: Boolean
+false = False

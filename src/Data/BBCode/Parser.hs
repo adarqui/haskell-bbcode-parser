@@ -1,3 +1,7 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ExplicitForAll #-}
+
 module Data.BBCode.Parser (
   open,
   closed,
@@ -19,16 +23,16 @@ module Data.BBCode.Parser (
 
 import Control.Monad.RWS               (evalRWS, modify, gets)
 import Data.Either                     (Either(..))
-import Data.List                       (List(..), filter, uncons, reverse, toUnfoldable, (:))
-import Data.List as L
-import Data.Map as M
+import qualified Data.List             as List (filter, uncons, reverse, null, takeWhile, dropWhile)
+import qualified Data.Map as M
+import Data.Text (Text)
 import Data.Maybe                      (Maybe(..))
-import Data.String                     (joinWith, toLower)
-import Data.String as String
-import Data.Tuple                      (Tuple(..), fst, snd)
-import Prelude                         (bind, pure, map, show, ($), (-), (>=), (<), (<>)
-                                       ,(+), (>), (==), (||), (/=), (&&), (*>), (<<<), (<$>))
-import Text.Parsec
+import qualified Data.Text as Text (intercalate, toLower, length, drop)
+import Data.Monoid ((<>))
+import Data.Tuple                      (fst, snd)
+import Prelude                         (pure, map, show, ($), (-), (>=), (<)
+                                       ,(+), (>), (==), (||), (/=), (&&), (*>), (<$>))
+import Data.Attoparsec.Text
 
 import Data.BBCode.Types
 import Data.BBCode.Internal
@@ -37,7 +41,7 @@ import Data.BBCode.Internal
 
 -- | Parses both [tag] and [tag params] | [tag=params]
 --
-open :: Parser String Token
+open :: Parser Text Token
 open = do
   _ <- string "["
   c <- letter
@@ -53,7 +57,7 @@ open = do
 
 
 
-closed :: Parser String Token
+closed :: Parser Text Token
 closed = do
   _ <- string "[/"
   c <- letter
@@ -63,14 +67,14 @@ closed = do
 
 
 
-str :: Parser String Token
+str :: Parser Text Token
 str = do
-  r <- some (isn'tAny "[]")
+  r <- some (isn'tAny "Nil")
   pure $ BBStr (fromCharList r)
 
 
 
-stringLiteral :: Parser String String
+stringLiteral :: Parser Text Text
 stringLiteral = do
   _ <- char '"'
   s <- fromCharList <$> some (isn'tAny "\"")
@@ -79,26 +83,26 @@ stringLiteral = do
 
 
 
-identifier :: Parser String String
+identifier :: Parser Text Text
 identifier = do
   fromCharList <$> some (isn'tAny " ")
 
 
 
-catchAll :: Parser String Token
+catchAll :: Parser Text Token
 catchAll = do
   r <- some item
   pure $ BBStr (fromCharList r)
 
 
 
-token :: Parser String Token
+token :: Parser Text Token
 token = do
   try closed <|> try open <|> try str <|> try catchAll
 
 
 
-tokens :: Parser String (List Token)
+tokens :: Parser Text (List Token)
 tokens = many token
 
 
@@ -113,8 +117,8 @@ concatTokens = go Nil
       Nothing             -> reverse accum
       Just { head, tail } ->
         let
-          heads = L.takeWhile isBBStr tail
-          tails = L.dropWhile isBBStr tail
+          heads = List.takeWhile isBBStr tail
+          tails = List.dropWhile isBBStr tail
         in
           if isBBStr head
                          then go ((concatBBStr $ head : heads) : accum) tails
@@ -139,7 +143,7 @@ isBBStr _         = false
 
 
 
-parseTokens :: forall s. s -> Parser s (List Token) -> Either String (List Token)
+parseTokens :: forall s. s -> Parser s (List Token) -> Either Text (List Token)
 parseTokens input p =
   case parse p input of
     Left err     -> Left $ show err
@@ -147,7 +151,7 @@ parseTokens input p =
 
 
 
-parseTokens' :: String -> Either String (List Token)
+parseTokens' :: Text -> Either Text (List Token)
 parseTokens' s = parseTokens s tokens
 
 
@@ -176,7 +180,7 @@ runFont :: BBCodeFn
 runFont m_params xs =
   case m_params of
        Nothing   -> Right $ Font defaultFontOpts xs
-       Just font -> Right $ Font (FontOpts { fontFamily: Just font, fontFaces: [] }) xs
+       Just font -> Right $ Font (FontOpts { fontFamily = Just font, fontFaces = Nil }) xs
        -- TODO FIXME: font faces
 
 runSize :: BBCodeFn
@@ -188,7 +192,7 @@ runSize m_params xs =
         let lr = parse parseBBSize sz in
         case lr of
              Left _  -> Right $ Size defaultSizeOpts xs
-             Right v -> Right $ Size (SizeOpts { sizeValue: Just v }) xs
+             Right v -> Right $ Size (SizeOpts { sizeValue = Just v }) xs
   where
   parseBBSize = try px <|> try pt <|> try em
   px = do
@@ -215,7 +219,7 @@ runColor m_params xs =
         let lr = parse parseBBColor sz in
         case lr of
              Left _  -> Right $ Color defaultColorOpts xs
-             Right v -> Right $ Color (ColorOpts { colorValue: Just v }) xs
+             Right v -> Right $ Color (ColorOpts { colorValue = Just v }) xs
   where
   parseBBColor = try quoted_name <|> try hex <|> try name
   quoted_name = do
@@ -299,11 +303,11 @@ runTextSimple :: (List BBCode -> BBCode) -> TagName -> Maybe Parameters -> List 
 runTextSimple _ tag _ Nil = Left $ tag <> " error"
 runTextSimple mk _ _ t    = Right $ mk t
 
-runRaw :: (String -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
+runRaw :: (Text -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
 runRaw mk _ _ (Cons (Text raw) Nil) = Right $ mk raw
 runRaw _ tag _ _                    = Left $ tag <> " error"
 
-runMedia :: (String -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
+runMedia :: (Text -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
 runMedia mk _ _ (Cons (Text url) Nil)  = Right $ mk url
 runMedia _ tag _ (Cons _ Nil)          = Left $ tag <> " error: only urls may be wrapped in " <> tag
 runMedia _ tag _ _                     = Left $ tag <> " error"
@@ -315,31 +319,31 @@ runMedia _ tag _ _                     = Left $ tag <> " error"
 defaultBBCodeMap :: BBCodeMap
 defaultBBCodeMap =
   M.fromFoldable [
-    Tuple "b" runBold,
-    Tuple "i" runItalic,
-    Tuple "u" runUnderline,
-    Tuple "s" runStrike,
-    Tuple "font" runFont,
-    Tuple "size" runSize,
-    Tuple "color" runColor,
-    Tuple "center" runCenter,
-    Tuple "left" runAlignLeft,
-    Tuple "right" runAlignRight,
-    Tuple "quote" runQuote,
-    Tuple "link" runLink,
-    Tuple "url" runLink,
---    Tuple "list" runList,
---    Tuple "ol" runOrdList,
---    Tuple "ordlist" runOrdList,
---    Tuple "table" runTable,
-    Tuple "move" runMove,
-    Tuple "img" runImage,
-    Tuple "youtube" runYoutube,
-    Tuple "vimeo" runVimeo,
-    Tuple "facebook" runFacebook,
-    Tuple "instagram" runInstagram,
-    Tuple "streamable" runStreamable,
-    Tuple "imgur" runImgur
+    tuple "b" runBold,
+    tuple "i" runItalic,
+    tuple "u" runUnderline,
+    tuple "s" runStrike,
+    tuple "font" runFont,
+    tuple "size" runSize,
+    tuple "color" runColor,
+    tuple "center" runCenter,
+    tuple "left" runAlignLeft,
+    tuple "right" runAlignRight,
+    tuple "quote" runQuote,
+    tuple "link" runLink,
+    tuple "url" runLink,
+--    tuple "list" runList,
+--    tuple "ol" runOrdList,
+--    tuple "ordlist" runOrdList,
+--    tuple "table" runTable,
+    tuple "move" runMove,
+    tuple "img" runImage,
+    tuple "youtube" runYoutube,
+    tuple "vimeo" runVimeo,
+    tuple "facebook" runFacebook,
+    tuple "instagram" runInstagram,
+    tuple "streamable" runStreamable,
+    tuple "imgur" runImgur
   ]
 
 
@@ -349,7 +353,7 @@ defaultBBCodeMap =
 defaultUnaryBBCodeMap :: BBCodeMap
 defaultUnaryBBCodeMap =
   M.fromFoldable [
-    Tuple "hr" runHR
+    tuple "hr" runHR
   ]
 
 
@@ -359,27 +363,27 @@ defaultUnaryBBCodeMap =
 defaultConsumeBBCodeMap :: BBCodeMap
 defaultConsumeBBCodeMap =
   M.fromFoldable [
-    Tuple "pre" runPre,
-    Tuple "code" runCode
+    tuple "pre" runPre,
+    tuple "code" runCode
   ]
 
 
 
 -- | TODO FIXME: worst function ever.. my brain is not working
 --
-parseTextAndNewlines :: String -> List BBCode
+parseTextAndNewlines :: Text -> List BBCode
 parseTextAndNewlines = go Nil
   where
   go acc "" = acc
   go acc s  =
     let
-      str'   = String.takeWhile (\c -> c /= '\r' && c /= '\n') s
-      nl     = if (String.length str' == 0)
-                  then String.length $ String.takeWhile (\c -> c == '\r' || c == '\n') s
+      str'   = Text.takeWhile (\c -> c /= '\r' && c /= '\n') s
+      nl     = if (Text.length str' == 0)
+                  then Text.length $ Text.takeWhile (\c -> c == '\r' || c == '\n') s
                   else 0
       rest   = if (nl > 0)
-                  then String.drop nl s
-                  else String.drop (String.length str') s
+                  then Text.drop nl s
+                  else Text.drop (Text.length str') s
     in
       if (nl > 0)
          then
@@ -389,7 +393,7 @@ parseTextAndNewlines = go Nil
 
 
 
-parseBBCodeFromTokens :: List Token -> ParseEff (Either String BBDoc)
+parseBBCodeFromTokens :: List Token -> ParseEff (Either Text BBDoc)
 parseBBCodeFromTokens = parseBBCodeFromTokens' defaultBBCodeMap defaultUnaryBBCodeMap defaultConsumeBBCodeMap
 
 
@@ -399,18 +403,18 @@ parseBBCodeFromTokens' ::
   -> BBCodeMap
   -> BBCodeMap
   -> List Token
-  -> ParseEff (Either String BBDoc)
+  -> ParseEff (Either Text BBDoc)
 parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
   where
 
   try_maps params tag =
-    case M.lookup tag bmap, M.lookup tag cmap of
-         Just bmap_fn, Nothing -> \xs -> runBBCode params tag xs bmap
-         Nothing, Just cmap_fn -> \xs -> runBBCode params tag xs cmap
-         -- TODO FIXME: need a user supplied FN to handle errors, this is what runBBCode was for; but not anymore
-         _, _                  -> \xs -> Right $ Text tag
+    case (M.lookup tag bmap, M.lookup tag cmap) of
+       (Just bmap_fn, Nothing) -> \xs -> runBBCode params tag xs bmap
+       (Nothing, Just cmap_fn) -> \xs -> runBBCode params tag xs cmap
+       -- TODO FIXME: need a user supplied FN to handle errors, this is what runBBCode was for; but not anymore
+       _                       -> \xs -> Right $ Text tag
 
-  go :: List Token -> Int -> ParseEff (Either String BBDoc)
+  go :: List Token -> Int -> ParseEff (Either Text BBDoc)
   go toks' level = do
 
     stack <- gets _.stack
@@ -428,7 +432,7 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
           BBStr s           -> do
             let
               text_and_newlines = parseTextAndNewlines s
-            if L.null stack
+            if List.null stack
                then do
                  modify (\st -> st{ accum = text_and_newlines <> st.accum })
                  go tail level
@@ -455,29 +459,29 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
           BBClosed tag      -> do
             case uncons stack of
               Nothing -> pure $ Left $ tag <> " not pushed"
-              Just { head: Tuple params tag, tail : stTail } -> do
+              Just ((params, tag), stTail) -> do
                 let
                   beneath = filter (\(Tuple l v) -> l < level) saccum
                   at_or_above = filter (\(Tuple l v) -> l >= level) saccum
-                case (try_maps params tag (L.reverse $ map snd at_or_above)) of
+                case (try_maps params tag (List.reverse $ map snd at_or_above)) of
                   Left err -> pure $ Left err
                   Right new' -> do
-                    if L.null stTail
+                    if List.null stTail
                        then do
                          modify (\st -> st{ accum = new' : st.accum, stack = stTail, saccum = Nil :: (List (Tuple Int BBCode)) })
                          go tail (level-1)
                        else do
-                         modify (\st -> st{ saccum = (Tuple level new' : beneath), stack = stTail })
+                         modify (\st -> st{ saccum = (tuple level new' : beneath), stack = stTail })
                          go tail (level-1)
 
 
 
-parseBBCode :: String -> Either String (List BBCode)
+parseBBCode :: Text -> Either Text (List BBCode)
 parseBBCode = parseBBCodeWith defaultParseReader
 
 
 
-parseBBCodeWith :: ParseReader -> String -> Either String (List BBCode)
+parseBBCodeWith :: ParseReader -> Text -> Either Text (List BBCode)
 parseBBCodeWith parse_reader s =
   case toks of
        Left s   -> Left s
