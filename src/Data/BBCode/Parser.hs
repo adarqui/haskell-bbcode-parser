@@ -56,13 +56,13 @@ open :: Parser Token
 open = do
   _ <- string "["
   c <- letter
-  r <- takeWhile (noneOf " =]")
+  r <- takeWhile1 (noneOf " =]")
   c' <- (char ' ' <|> char '=' <|> char ']')
   case c' of
     ']' -> pure $ BBOpen Nothing (Text.toLower $ Text.cons c r)
     _   -> do
           pc <- anyChar
-          pr <- takeWhile (/= ']')
+          pr <- takeWhile1 (/= ']')
           _ <- char ']'
           pure $ BBOpen (Just (Text.cons pc pr)) (Text.toLower $ Text.cons c r)
 
@@ -72,7 +72,7 @@ closed :: Parser Token
 closed = do
   _ <- string "[/"
   c <- letter
-  r <- takeWhile (/= ']')
+  r <- takeWhile1 (/= ']')
   _ <- char ']'
   pure $ BBClosed (Text.toLower $ Text.cons c r)
 
@@ -80,7 +80,7 @@ closed = do
 
 str :: Parser Token
 str = do
-  r <- takeWhile (noneOf "[]")
+  r <- takeWhile1 (noneOf "[]")
   pure $ BBStr r
 
 
@@ -88,20 +88,20 @@ str = do
 stringLiteral :: Parser Text
 stringLiteral = do
   _ <- char '"'
-  s <- takeWhile (/= '"')
+  s <- takeWhile1 (/= '"')
   _ <- char '"'
   pure s
 
 
 
 identifier :: Parser Text
-identifier = takeWhile (not <<< isSpace)
+identifier = takeWhile1 (not <<< isSpace)
 
 
 
 catchAll :: Parser Token
 catchAll = do
-  r <- takeWhile (const True)
+  r <- takeWhile1 (const True)
   pure $ BBStr r
 
 
@@ -386,9 +386,9 @@ parseTextAndNewlines = go Nil
   go acc "" = acc
   go acc s  =
     let
-      str'   = Text.takeWhile (\c -> c /= '\r' && c /= '\n') s
+      str'   = Text.takeWhile1 (\c -> c /= '\r' && c /= '\n') s
       nl     = if (Text.length str' == 0)
-                  then Text.length $ Text.takeWhile (\c -> c == '\r' || c == '\n') s
+                  then Text.length $ Text.takeWhile1 (\c -> c == '\r' || c == '\n') s
                   else 0
       rest   = if (nl > 0)
                   then Text.drop nl s
