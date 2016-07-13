@@ -10,8 +10,9 @@ module Data.BBCode.ParserSpec (
 import           Data.BBCode.Internal
 import           Data.BBCode.Parser
 import           Data.BBCode.Types
+import           Data.Monoid          ((<>))
+import qualified Data.Text            as Text
 import           Test.Hspec
-import qualified Data.Text as Text
 
 
 
@@ -170,14 +171,14 @@ spec = do
         `shouldBe` (Right $ Cons (Link (Just "name") "someUrl") Nil)
 
       let
-        bigString n      = Text.replicate n 'A')
+        bigString n      = Text.replicate n "A"
         big_string_1024  = bigString 1024
         big_string_10024 = bigString 10024
 
-      parseBBCode $ "[b]" <> big_string_1024 <> "[/b]"
+      parseBBCode ("[b]" <> big_string_1024 <> "[/b]")
         `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_1024) Nil)) Nil)
 
-      parseBBCode $ "[b]" <> big_string_10024 <> "[/b]"
+      parseBBCode ("[b]" <> big_string_10024 <> "[/b]")
         `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_10024) Nil)) Nil)
 
 

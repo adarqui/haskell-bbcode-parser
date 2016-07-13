@@ -36,6 +36,7 @@ test-suite haskell-bbcode-parser-test
                        Data.BBCode.TypesSpec
   build-depends:       base
                      , hspec
+                     , text
                      , haskell-bbcode-parser
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
