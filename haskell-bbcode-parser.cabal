@@ -19,23 +19,25 @@ library
                        Data.BBCode.HTML
                        Data.BBCode.Parser
                        Data.BBCode.Types
-  other-modules:       Data.BBCode.Internal
+                       Data.BBCode.Internal
   build-depends:       base >= 4.7 && < 5
                      , attoparsec
                      , containers
                      , mtl
                      , text
-  ghc-options:         -Wall -Werror
+  ghc-options:         -Wall
   default-language:    Haskell2010
 
 test-suite haskell-bbcode-parser-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
+  other-modules:       Data.BBCode.ParserSpec
+                       Data.BBCode.TypesSpec
   build-depends:       base
                      , hspec
                      , haskell-bbcode-parser
-  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
 source-repository head

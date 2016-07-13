@@ -139,11 +139,10 @@ concatTokens = go Nil
 -- | Once we have a list of BBStr's, turn them decimalo one BBStr
 --
 concatBBStr :: List Token -> Token
-concatBBStr _ = undefined
--- concatBBStr = BBStr <$> joinWith "" <<< toUnfoldable <<< map go <<< List.filter isBBStr
---   where
---   go (BBStr s) = s
---   go _         = ""
+concatBBStr = BBStr <$> Text.concat <<< map go <<< List.filter isBBStr
+  where
+  go (BBStr s) = s
+  go _         = ""
 
 
 

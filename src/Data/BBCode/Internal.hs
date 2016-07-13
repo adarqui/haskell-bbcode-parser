@@ -6,6 +6,7 @@ module Data.BBCode.Internal (
   Nil,
   Tuple,
   tuple,
+  StrMap,
   pattern Tuple,
   pattern Cons,
   pattern Nil,
