@@ -17,9 +17,9 @@ library
   hs-source-dirs:      src
   exposed-modules:     Data.BBCode
                        Data.BBCode.HTML
-                       Data.BBCode.Misc
                        Data.BBCode.Parser
                        Data.BBCode.Types
+  other-modules:       Data.BBCode.Internal
   build-depends:       base >= 4.7 && < 5
                      , text
   ghc-options:         -Wall -Werror

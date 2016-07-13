@@ -39,7 +39,6 @@ module Data.BBCode.Types (
 
 
 import Control.Monad.RWS (RWS)
-import Data.BBCode.Misc  (intersperse)
 import Data.Either       (Either)
 import Data.Foldable     (foldl)
 import Data.List         (List(..))
@@ -47,11 +46,18 @@ import Data.Map          as M
 import Data.Maybe        (Maybe(..))
 import Data.String       (toLower)
 import Data.Tuple        (Tuple)
-import Prelude           (Unit, class Show, show, class Eq, map, (<>), (==), (<<<), (&&), (+), (-), ($))
+import Prelude           (Unit, Show, show, Eq, map, (<>), (==), (<<<), (&&), (+), (-), ($))
+
+import Data.BBCode.Internal
 
 
+type List a = [a]
+type Tuple a b = (a, b)
+tuple :: a -> b -> (a, b)
+tuple = (,)
 
-type ParseState = {
+
+data ParseState = ParseState {
   accum  :: List BBCode,
   stack  :: List (Tuple (Maybe Parameters) TagName),
   saccum :: List (Tuple Int BBCode)
