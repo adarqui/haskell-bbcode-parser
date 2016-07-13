@@ -19,7 +19,6 @@ module Data.BBCode.Parser (
 
 import Control.Monad.RWS               (evalRWS, modify, gets)
 import Data.Either                     (Either(..))
-import Data.Foldable                   (Foldable, foldMap)
 import Data.List                       (List(..), filter, uncons, reverse, toUnfoldable, (:))
 import Data.List as L
 import Data.Map as M
@@ -27,17 +26,12 @@ import Data.Maybe                      (Maybe(..))
 import Data.String                     (joinWith, toLower)
 import Data.String as String
 import Data.Tuple                      (Tuple(..), fst, snd)
-import Data.Unfoldable                 (replicate)
 import Prelude                         (bind, pure, map, show, ($), (-), (>=), (<), (<>)
                                        ,(+), (>), (==), (||), (/=), (&&), (*>), (<<<), (<$>))
-import Text.Parsing.Simple             (Parser, parse, try,
-                                       char, string, alphanum, letter, int, item
-                                       ,isn'tAny, some, many)
+import Text.Parsec
 
-import Data.BBCode.Types               (ParseReader, BBDoc, ParseEff, BBCodeMap, ErrorMsg, Parameters, TagName, BBCodeFn
-                                       ,BBCode(..), BBColor(..), BBSize(..), ColorOpts(..), FontOpts(..), SizeOpts(..)
-                                       ,Token(..), defaultParseState, defaultParseReader, defaultImageOpts, defaultColorOpts
-                                       ,defaultSizeOpts, defaultFontOpts)
+import Data.BBCode.Types
+import Data.BBCode.Internal
 
 
 
@@ -109,16 +103,6 @@ tokens = many token
 
 
 
-fromCharList :: forall f. Foldable f => f Char -> String
-fromCharList = foldMap String.singleton
-
-
-
-fromCharListToLower :: forall f. Foldable f => f Char -> String
-fromCharListToLower = toLower <<< fromCharList
-
-
-
 -- | concat consecutive BBStr's
 --
 concatTokens :: List Token -> List Token
@@ -141,10 +125,11 @@ concatTokens = go Nil
 -- | Once we have a list of BBStr's, turn them into one BBStr
 --
 concatBBStr :: List Token -> Token
-concatBBStr = BBStr <$> joinWith "" <<< toUnfoldable <<< map go <<< filter isBBStr
-  where
-  go (BBStr s) = s
-  go _         = ""
+concatBBStr _ = undefined
+-- concatBBStr = BBStr <$> joinWith "" <<< toUnfoldable <<< map go <<< filter isBBStr
+--   where
+--   go (BBStr s) = s
+--   go _         = ""
 
 
 

@@ -16,6 +16,6 @@ tuple :: a -> b -> (a, b)
 tuple = (,)
 
 
-infixr 9 (<<<)
+infixr 9 <<<
 (<<<) :: (b -> c) -> (a -> b) -> a -> c
 (<<<) = (.)
