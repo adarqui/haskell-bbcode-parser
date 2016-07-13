@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Data.BBCode.Types (
   ParseEff,
   ParseState,
@@ -11,7 +13,7 @@ module Data.BBCode.Types (
   TagName,
   Parameters,
   ErrorMsg,
-  BBDoc (..),
+  BBDoc,
   BBCode (..),
   BBSize (..),
   BBList (..),
@@ -28,8 +30,10 @@ module Data.BBCode.Types (
   defaultFontOpts,
   LinkOpts (..),
   defaultLinkOpts,
+  defaultSafeLinkOpts,
   ImageOpts (..),
   defaultImageOpts,
+  defaultSafeImageOpts,
   SizeOpts (..),
   defaultSizeOpts,
   ColorOpts (..),
@@ -38,17 +42,18 @@ module Data.BBCode.Types (
 
 
 
-import Control.Monad.RWS (RWS)
-import Data.Either       (Either)
-import Data.Foldable     (foldl)
-import Data.List         (List(..))
-import qualified Data.Map          as M
-import Data.Maybe        (Maybe(..))
-import Data.String       (toLower)
-import Data.Tuple        (Tuple)
-import Prelude           (Unit, Show, show, Eq, map, (<>), (==), (<<<), (&&), (+), (-), ($))
+import           Control.Monad.RWS    (RWS)
+import           Data.Either          (Either)
+import           Data.Foldable        (foldl)
+import qualified Data.List            as List (intersperse)
+import qualified Data.Map             as M
+import           Data.Maybe           (Maybe (..))
+import           Data.Monoid          ((<>))
+import           Data.Text            (Text)
+import qualified Data.Text            as Text (pack)
+import           Prelude              (Double, Eq, Int, Show, map, show, ($))
 
-import Data.BBCode.Internal
+import           Data.BBCode.Internal (List, Tuple, Unit, (<<<))
 
 
 
@@ -60,9 +65,9 @@ data ParseState = ParseState {
 
 defaultParseState :: ParseState
 defaultParseState = ParseState {
-  accum  = Nil,
-  stack  = Nil,
-  saccum = Nil
+  accum  = [],
+  stack  = [],
+  saccum = []
 }
 
 
@@ -70,7 +75,7 @@ defaultParseState = ParseState {
 data ParseReader = ParseReader {
   linkOpts  :: LinkOpts,
   imageOpts :: ImageOpts,
-  trfm      :: M.Map String (BBCode -> BBCode)
+  trfm      :: M.Map Text (BBCode -> BBCode)
 }
 
 defaultParseReader :: ParseReader
@@ -89,22 +94,22 @@ type ParseEff = RWS ParseReader Unit ParseState
 data Token
   = BBOpen   (Maybe Parameters) TagName
   | BBClosed TagName
-  | BBStr    String
+  | BBStr    Text
   deriving (Show, Eq)
 
 
 
-flattenTokens :: List Token -> String
-flattenTokens = foldl (<>) "" <<< intersperse "," <<< map show
+flattenTokens :: List Token -> Text
+flattenTokens = foldl (<>) "" <<< List.intersperse "," <<< map (Text.pack <<< show)
 
 
 
 type BBCodeMap = M.Map TagName BBCodeFn
 
 type BBCodeFn   = (Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode)
-type TagName    = String
-type Parameters = String
-type ErrorMsg   = String
+type TagName    = Text
+type Parameters = Text
+type ErrorMsg   = Text
 
 
 
@@ -128,10 +133,10 @@ data BBCode
   | List       BBList
   | OrdList    BBList
   | Table      BBTable
-  | Pre        String
-  | Code       (Maybe String) String
+  | Pre        Text
+  | Code       (Maybe Text) Text
   | Move       (List BBCode)
-  | Text       String
+  | Text       Text
   | Image      ImageOpts MediaURL
   | Youtube    MediaURL
   | Vimeo      MediaURL
@@ -168,34 +173,34 @@ data BBTable
 
 data ImageSize
   = ImagePx Int
-  | ImagePercent Number
+  | ImagePercent Double
   deriving (Eq, Show)
 
 
 
 data BBColor
-  = ColorName String
-  | ColorHex  String
+  = ColorName Text
+  | ColorHex  Text
   deriving (Eq, Show)
 
 
 
-type QuoteAuthor = String
-type LinkURL     = String
-type LinkName    = String
-type MediaURL    = String
+type QuoteAuthor = Text
+type LinkURL     = Text
+type LinkName    = Text
+type MediaURL    = Text
 type ImageHeight = ImageSize
 type ImageWidth  = ImageSize
 
 
 
 data LinkOpts = LinkOpts {
-  linkName :: Maybe String
+  linkName :: Maybe Text
 } deriving (Eq, Show)
 
 defaultLinkOpts :: LinkOpts
 defaultLinkOpts = LinkOpts {
-  linkName: Nothing
+  linkName = Nothing
 }
 
 defaultSafeLinkOpts :: LinkOpts
@@ -208,25 +213,25 @@ data ImageOpts = ImageOpts {
 
 defaultImageOpts :: ImageOpts
 defaultImageOpts = ImageOpts {
-  imageHeight: Nothing,
-  imageWidth:  Nothing
+  imageHeight = Nothing,
+  imageWidth  = Nothing
 }
 
 defaultSafeImageOpts :: ImageOpts
 defaultSafeImageOpts = ImageOpts {
-  imageHeight: Just $ ImagePx 300,
-  imageWidth:  Just $ ImagePx 300
+  imageHeight = Just $ ImagePx 300,
+  imageWidth  =  Just $ ImagePx 300
 }
 
 data FontOpts = FontOpts {
-  fontFamily :: Maybe String,
-  fontFaces  :: Array String
+  fontFamily :: Maybe Text,
+  fontFaces  :: List Text
 } deriving (Eq, Show)
 
 defaultFontOpts :: FontOpts
 defaultFontOpts = FontOpts {
-  fontFamily: Nothing,
-  fontFaces:  []
+  fontFamily = Nothing,
+  fontFaces =  []
 }
 
 data SizeOpts = SizeOpts {
@@ -235,7 +240,7 @@ data SizeOpts = SizeOpts {
 
 defaultSizeOpts :: SizeOpts
 defaultSizeOpts = SizeOpts {
-  sizeValue: Nothing
+  sizeValue = Nothing
 }
 
 data ColorOpts = ColorOpts {
@@ -244,5 +249,5 @@ data ColorOpts = ColorOpts {
 
 defaultColorOpts :: ColorOpts
 defaultColorOpts = ColorOpts {
-  colorValue: Nothing
+  colorValue = Nothing
 }

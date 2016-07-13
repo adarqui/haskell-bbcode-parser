@@ -1,4 +1,5 @@
 module Data.BBCode.Internal (
+  Unit,
   List,
   Tuple,
   tuple,
@@ -7,6 +8,7 @@ module Data.BBCode.Internal (
 
 
 
+type Unit      = ()
 type List a    = [a]
 type Tuple a b = (a, b)
 
@@ -19,3 +21,6 @@ tuple = (,)
 infixr 9 <<<
 (<<<) :: (b -> c) -> (a -> b) -> a -> c
 (<<<) = (.)
+
+
+
