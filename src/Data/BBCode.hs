@@ -5,6 +5,5 @@ module Data.BBCode (
 
 
 import           Data.BBCode.HTML   as A
-import           Data.BBCode.Misc   as A
 import           Data.BBCode.Parser as A
 import           Data.BBCode.Types  as A

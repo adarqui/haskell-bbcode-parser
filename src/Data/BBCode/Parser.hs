@@ -17,10 +17,9 @@ module Data.BBCode.Parser (
 
 
 
-import Control.Alt -- ((<|>))
 import Control.Monad.RWS               (evalRWS, modify, gets)
 import Data.Either                     (Either(..))
-import Data.Foldable                   (class Foldable, foldMap)
+import Data.Foldable                   (Foldable, foldMap)
 import Data.List                       (List(..), filter, uncons, reverse, toUnfoldable, (:))
 import Data.List as L
 import Data.Map as M
