@@ -1,6 +1,6 @@
+{-# LANGUAGE ExplicitForAll    #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ExplicitForAll #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Data.BBCode.Parser (
   open,
@@ -21,23 +21,25 @@ module Data.BBCode.Parser (
 
 
 
-import Data.Char (isAlphaNum, isSpace)
-import Control.Applicative ((<|>))
-import Control.Monad.RWS               (evalRWS, modify, gets)
-import Data.Either                     (Either(..))
-import qualified Data.List             as List
-import qualified Data.Map as M
-import Data.Text (Text)
-import Data.Maybe                      (Maybe(..))
-import qualified Data.Text as Text
-import Data.Monoid ((<>))
-import Data.Tuple                      (fst, snd)
-import Prelude                         (undefined, Int, Bool(..), Char, pure, map, show, not, const, ($), (-), (>=), (<)
-                                       ,(+), (>), (==), (||), (/=), (&&), (*>), (<$>))
-import Data.Attoparsec.Text
+import           Control.Applicative  ((<|>))
+import           Control.Monad.RWS    (evalRWS, gets, modify)
+import           Data.Attoparsec.Text
+import           Data.Char            (isAlphaNum, isSpace)
+import           Data.Either          (Either (..))
+import qualified Data.List            as List
+import qualified Data.Map             as M
+import           Data.Maybe           (Maybe (..))
+import           Data.Monoid          ((<>))
+import           Data.Text            (Text)
+import qualified Data.Text            as Text
+import           Data.Tuple           (fst, snd)
+import           Prelude              (Bool (..), Char, Int, const, map, not,
+                                       pure, show, undefined, ($), (&&), (*>),
+                                       (+), (-), (/=), (<), (<$>), (==), (>),
+                                       (>=), (||))
 
-import Data.BBCode.Types
-import Data.BBCode.Internal
+import           Data.BBCode.Internal
+import           Data.BBCode.Types
 
 
 
