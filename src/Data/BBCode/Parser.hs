@@ -21,10 +21,10 @@ module Data.BBCode.Parser (
 
 
 
-import           Control.Applicative  ((<|>))
+import           Control.Applicative  ((<*), (<|>))
 import           Control.Monad.RWS    (evalRWS, gets, modify)
 import           Data.Attoparsec.Text
-import           Data.Char            (isAlphaNum, isSpace)
+import           Data.Char            (isAlpha, isAlphaNum, isSpace)
 import           Data.Either          (Either (..))
 import qualified Data.List            as List
 import qualified Data.Map             as M
@@ -34,15 +34,16 @@ import           Data.Text            (Text)
 import qualified Data.Text            as Text
 import           Data.Tuple           (fst, snd)
 import           Prelude              (Bool (..), Char, Int, const, map, not,
-                                       pure, show, undefined, ($), (&&), (*>),
-                                       (+), (-), (/=), (<), (<$>), (==), (>),
-                                       (>=), (||))
+                                       otherwise, pure, show, undefined, ($),
+                                       (&&), (*>), (+), (-), (/=), (<), (<$>),
+                                       (==), (>), (>=), (||))
 
 import           Data.BBCode.Internal
 import           Data.BBCode.Types
 
 
 
+alphaNum :: Parser Char
 alphaNum = satisfy isAlphaNum
 
 
@@ -52,31 +53,35 @@ noneOf s c = Text.all (/= c) s
 
 
 
+-- | Basically, takeWhile1 (\c -> test c && noneOf s)
+--
+noneOfAndAllOf :: Text -> (Char -> Bool) -> Char -> Bool
+noneOfAndAllOf s test c = test c && noneOf s c
+
+
+
 -- | Parses both [tag] and [tag params] | [tag=params]
 --
 open :: Parser Token
 open = do
-  _ <- string "["
-  c <- letter
-  r <- takeWhile1 (noneOf " =]")
+  _  <- char '['
+  bb <- takeWhile1 (noneOfAndAllOf " =]" isAlpha)
   c' <- (char ' ' <|> char '=' <|> char ']')
   case c' of
-    ']' -> pure $ BBOpen Nothing (Text.toLower $ Text.cons c r)
+    ']' -> pure $ BBOpen Nothing (Text.toLower $ bb)
     _   -> do
-          pc <- anyChar
-          pr <- takeWhile1 (/= ']')
-          _ <- char ']'
-          pure $ BBOpen (Just (Text.cons pc pr)) (Text.toLower $ Text.cons c r)
+          params <- takeWhile1 (/= ']')
+          _      <- char ']'
+          pure $ BBOpen (Just params) (Text.toLower bb)
 
 
 
 closed :: Parser Token
 closed = do
-  _ <- string "[/"
-  c <- letter
-  r <- takeWhile1 (/= ']')
-  _ <- char ']'
-  pure $ BBClosed (Text.toLower $ Text.cons c r)
+  _  <- string "[/"
+  bb <- takeWhile1 (noneOfAndAllOf "]" isAlpha)
+  _  <- char ']'
+  pure $ BBClosed (Text.toLower bb)
 
 
 
@@ -156,7 +161,7 @@ isBBStr _         = false
 
 parseTokens :: Text -> Parser (List Token) -> Either Text (List Token)
 parseTokens input p =
-  case parseOnly p input of
+  case parseOnly (p <* endOfInput) input of
     Left err     -> Left $ Text.pack err
     Right actual -> Right actual
 

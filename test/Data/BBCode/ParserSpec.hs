@@ -69,22 +69,54 @@ spec = do
         `shouldBe` (Right $ Cons (BBOpen Nothing "b") (Cons (BBStr "hello") (Cons (BBClosed "b") Nil)))
 
       flattenTokens <$> parseTokens' "[b][u]hello[/u][/b]"
-        `shouldBe` (Right "open(b),open(u),str(hello),closed(u),closed(b)")
+        `shouldBe` (Right "BBOpen Nothing \"b\",BBOpen Nothing \"u\",BBStr \"hello\",BBClosed \"u\",BBClosed \"b\"")
 
       flattenTokens <$> parseTokens' "[b][u][/u][/b]"
-        `shouldBe` (Right "open(b),open(u),closed(u),closed(b)")
+        `shouldBe` (Right "BBOpen Nothing \"b\",BBOpen Nothing \"u\",BBClosed \"u\",BBClosed \"b\"")
 
       flattenTokens <$> parseTokens' "[b][u][/u]"
-        `shouldBe` (Right "open(b),open(u),closed(u)")
+        `shouldBe` (Right "BBOpen Nothing \"b\",BBOpen Nothing \"u\",BBClosed \"u\"")
 
       flattenTokens <$> parseTokens' "[b]a[u]b[/u]c"
-        `shouldBe` (Right "open(b),str(a),open(u),str(b),closed(u),str(c)")
+        `shouldBe` (Right "BBOpen Nothing \"b\",BBStr \"a\",BBOpen Nothing \"u\",BBStr \"b\",BBClosed \"u\",BBStr \"c\"")
 
       flattenTokens <$> parseTokens' "[url=someurl]name[/url]"
-        `shouldBe` (Right "open(url, someurl),str(name),closed(url)")
+        `shouldBe` (Right "BBOpen (Just \"someurl\") \"url\",BBStr \"name\",BBClosed \"url\"")
 
       flattenTokens <$> parseTokens' "[quote author=adarqui]hello[/quote]"
-        `shouldBe` (Right "open(quote, author=adarqui),str(hello),closed(quote)")
+        `shouldBe` (Right "BBOpen (Just \"author=adarqui\") \"quote\",BBStr \"hello\",BBClosed \"quote\"")
 
       flattenTokens <$> parseTokens' "[youtube]https://www.youtube.com/watch?v=video[/youtube]"
-        `shouldBe` (Right "open(youtube),str(https://www.youtube.com/watch?v=video),closed(youtube)")
+        `shouldBe` (Right "BBOpen Nothing \"youtube\",BBStr \"https://www.youtube.com/watch?v=video\",BBClosed \"youtube\"")
+
+
+
+  describe "parseBBCode" $ do
+    it "parses a string into bbcode tags" $ do
+
+      parseBBCode "hello"
+        `shouldBe` (Right $ Cons (Text "hello") Nil)
+
+      parseBBCode "/:?"
+        `shouldBe` (Right $ Cons (Text "/:?") Nil)
+
+      parseBBCode "["
+        `shouldBe` (Right $ Cons (Text "[") Nil)
+
+      parseBBCode "]"
+        `shouldBe` (Right $ Cons (Text "]") Nil)
+
+      parseBBCode "[ b ]"
+        `shouldBe` (Right $ Cons (Text "[ b ]") Nil)
+
+      parseBBCode "[/ b ]"
+        `shouldBe` (Right $ Cons (Text "[/ b ]") Nil)
+
+      parseBBCode "[/b]hello"
+        `shouldBe` (Left "b not pushed")
+
+      parseBBCode "[b]hello"
+        `shouldBe` (Left "b not closed")
+
+      parseBBCode "[b]hello[/b]"
+        `shouldBe` (Right $ Cons (Bold (Cons (Text "hello") Nil)) Nil)
