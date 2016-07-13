@@ -41,7 +41,7 @@ import Data.BBCode.Internal
 
 -- | Parses both [tag] and [tag params] | [tag=params]
 --
-open :: Parser Text Token
+open :: Parser Token
 open = do
   _ <- string "["
   c <- letter
@@ -57,7 +57,7 @@ open = do
 
 
 
-closed :: Parser Text Token
+closed :: Parser Token
 closed = do
   _ <- string "[/"
   c <- letter
@@ -67,14 +67,14 @@ closed = do
 
 
 
-str :: Parser Text Token
+str :: Parser Token
 str = do
   r <- some (isn'tAny "Nil")
   pure $ BBStr (fromCharList r)
 
 
 
-stringLiteral :: Parser Text Text
+stringLiteral :: Parser Text
 stringLiteral = do
   _ <- char '"'
   s <- fromCharList <$> some (isn'tAny "\"")
@@ -83,26 +83,26 @@ stringLiteral = do
 
 
 
-identifier :: Parser Text Text
+identifier :: Parser Text
 identifier = do
   fromCharList <$> some (isn'tAny " ")
 
 
 
-catchAll :: Parser Text Token
+catchAll :: Parser Token
 catchAll = do
   r <- some item
   pure $ BBStr (fromCharList r)
 
 
 
-token :: Parser Text Token
+token :: Parser Token
 token = do
   try closed <|> try open <|> try str <|> try catchAll
 
 
 
-tokens :: Parser Text (List Token)
+tokens :: Parser (List Token)
 tokens = many token
 
 
