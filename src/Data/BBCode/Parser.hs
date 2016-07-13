@@ -386,9 +386,9 @@ parseTextAndNewlines = go Nil
   go acc "" = acc
   go acc s  =
     let
-      str'   = Text.takeWhile1 (\c -> c /= '\r' && c /= '\n') s
+      str'   = Text.takeWhile (\c -> c /= '\r' && c /= '\n') s
       nl     = if (Text.length str' == 0)
-                  then Text.length $ Text.takeWhile1 (\c -> c == '\r' || c == '\n') s
+                  then Text.length $ Text.takeWhile (\c -> c == '\r' || c == '\n') s
                   else 0
       rest   = if (nl > 0)
                   then Text.drop nl s
