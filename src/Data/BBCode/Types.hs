@@ -2,9 +2,9 @@
 
 module Data.BBCode.Types (
   ParseEff,
-  ParseState,
+  ParseState (..),
   defaultParseState,
-  ParseReader,
+  ParseReader (..),
   defaultParseReader,
   Token (..),
   flattenTokens,

@@ -25,14 +25,14 @@ import Data.Char (isAlphaNum)
 import Control.Applicative ((<|>))
 import Control.Monad.RWS               (evalRWS, modify, gets)
 import Data.Either                     (Either(..))
-import qualified Data.List             as List (filter, uncons, reverse, null, takeWhile, dropWhile)
+import qualified Data.List             as List
 import qualified Data.Map as M
 import Data.Text (Text)
 import Data.Maybe                      (Maybe(..))
 import qualified Data.Text as Text
 import Data.Monoid ((<>))
 import Data.Tuple                      (fst, snd)
-import Prelude                         (undefined, pure, map, show, ($), (-), (>=), (<)
+import Prelude                         (undefined, Int, pure, map, show, ($), (-), (>=), (<)
                                        ,(+), (>), (==), (||), (/=), (&&), (*>), (<$>))
 import Data.Attoparsec.Text
 
@@ -135,7 +135,7 @@ concatTokens = go Nil
 --
 concatBBStr :: List Token -> Token
 concatBBStr _ = undefined
--- concatBBStr = BBStr <$> joinWith "" <<< toUnfoldable <<< map go <<< filter isBBStr
+-- concatBBStr = BBStr <$> joinWith "" <<< toUnfoldable <<< map go <<< List.filter isBBStr
 --   where
 --   go (BBStr s) = s
 --   go _         = ""
@@ -148,7 +148,7 @@ isBBStr _         = false
 
 
 
-parseTokens :: forall s. s -> Parser s (List Token) -> Either Text (List Token)
+parseTokens :: Text -> Parser (List Token) -> Either Text (List Token)
 parseTokens input p =
   case parse p input of
     Left err     -> Left $ show err
@@ -231,8 +231,8 @@ runColor m_params xs =
     name' <- stringLiteral
     pure $ ColorName name'
   hex = do
-    hex_code <- char '#' *> some alphaNum
-    pure $ ColorHex (fromCharList $ '#' : hex_code)
+    hex_code <- char '#' *> many1' alphaNum
+    pure $ ColorHex (Text.cons '#' hex_code)
   name = do
     name' <- identifier
     pure $ ColorName name'
@@ -323,32 +323,32 @@ runMedia _ tag _ _                     = Left $ tag <> " error"
 --
 defaultBBCodeMap :: BBCodeMap
 defaultBBCodeMap =
-  M.fromFoldable [
-    tuple "b" runBold,
-    tuple "i" runItalic,
-    tuple "u" runUnderline,
-    tuple "s" runStrike,
-    tuple "font" runFont,
-    tuple "size" runSize,
-    tuple "color" runColor,
-    tuple "center" runCenter,
-    tuple "left" runAlignLeft,
-    tuple "right" runAlignRight,
-    tuple "quote" runQuote,
-    tuple "link" runLink,
-    tuple "url" runLink,
---    tuple "list" runList,
---    tuple "ol" runOrdList,
---    tuple "ordlist" runOrdList,
---    tuple "table" runTable,
-    tuple "move" runMove,
-    tuple "img" runImage,
-    tuple "youtube" runYoutube,
-    tuple "vimeo" runVimeo,
-    tuple "facebook" runFacebook,
-    tuple "instagram" runInstagram,
-    tuple "streamable" runStreamable,
-    tuple "imgur" runImgur
+  M.fromList [
+    Tuple "b" runBold,
+    Tuple "i" runItalic,
+    Tuple "u" runUnderline,
+    Tuple "s" runStrike,
+    Tuple "font" runFont,
+    Tuple "size" runSize,
+    Tuple "color" runColor,
+    Tuple "center" runCenter,
+    Tuple "left" runAlignLeft,
+    Tuple "right" runAlignRight,
+    Tuple "quote" runQuote,
+    Tuple "link" runLink,
+    Tuple "url" runLink,
+--    Tuple "list" runList,
+--    Tuple "ol" runOrdList,
+--    Tuple "ordlist" runOrdList,
+--    Tuple "table" runTable,
+    Tuple "move" runMove,
+    Tuple "img" runImage,
+    Tuple "youtube" runYoutube,
+    Tuple "vimeo" runVimeo,
+    Tuple "facebook" runFacebook,
+    Tuple "instagram" runInstagram,
+    Tuple "streamable" runStreamable,
+    Tuple "imgur" runImgur
   ]
 
 
@@ -357,8 +357,8 @@ defaultBBCodeMap =
 --
 defaultUnaryBBCodeMap :: BBCodeMap
 defaultUnaryBBCodeMap =
-  M.fromFoldable [
-    tuple "hr" runHR
+  M.fromList [
+    Tuple "hr" runHR
   ]
 
 
@@ -367,9 +367,9 @@ defaultUnaryBBCodeMap =
 --
 defaultConsumeBBCodeMap :: BBCodeMap
 defaultConsumeBBCodeMap =
-  M.fromFoldable [
-    tuple "pre" runPre,
-    tuple "code" runCode
+  M.fromList [
+    Tuple "pre" runPre,
+    Tuple "code" runCode
   ]
 
 
@@ -392,7 +392,7 @@ parseTextAndNewlines = go Nil
     in
       if (nl > 0)
          then
-           go (replicate nl NL <> acc) rest
+           go (List.replicate nl NL <> acc) rest
          else
            go (Text str' : acc) rest
 
@@ -422,9 +422,9 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
   go :: List Token -> Int -> ParseEff (Either Text BBDoc)
   go toks' level = do
 
-    stack <- gets _.stack
-    accum <- gets _.accum
-    saccum <- gets _.saccum
+    stack <- gets stack
+    accum <- gets accum
+    saccum <- gets saccum
 
     case List.uncons toks' of
       Nothing -> do
@@ -439,10 +439,10 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
               text_and_newlines = parseTextAndNewlines s
             if List.null stack
                then do
-                 modify (\st -> st{ accum = text_and_newlines <> st.accum })
+                 modify (\st@ParseState{..} -> st{ accum = text_and_newlines <> accum })
                  go tail level
                else do
-                 modify (\st -> st{ saccum = (map (Tuple level) text_and_newlines) <> st.saccum })
+                 modify (\st@ParseState{..} -> st{ saccum = (map (Tuple level) text_and_newlines) <> saccum })
                  go tail level
 
           BBOpen params tag -> do
@@ -455,28 +455,28 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
                  case (runBBCode params tag Nil umap) of
                    Left err   -> pure $ Left err
                    Right new' -> do
-                     modify (\st -> st{ accum = (new' : st.accum) })
+                     modify (\st@ParseState{..} -> st{ accum = (new' : accum) })
                      go tail level
                else do
-                 modify (\st -> st{ stack = (Tuple params tag) : st.stack })
+                 modify (\st@ParseState{..} -> st{ stack = (Tuple params tag) : stack })
                  go tail (level+1)
 
           BBClosed tag      -> do
-            case uncons stack of
+            case List.uncons stack of
               Nothing -> pure $ Left $ tag <> " not pushed"
               Just ((params, tag), stTail) -> do
                 let
-                  beneath = filter (\(Tuple l v) -> l < level) saccum
-                  at_or_above = filter (\(Tuple l v) -> l >= level) saccum
+                  beneath = List.filter (\(Tuple l v) -> l < level) saccum
+                  at_or_above = List.filter (\(Tuple l v) -> l >= level) saccum
                 case (try_maps params tag (List.reverse $ map snd at_or_above)) of
                   Left err -> pure $ Left err
                   Right new' -> do
                     if List.null stTail
                        then do
-                         modify (\st -> st{ accum = new' : st.accum, stack = stTail, saccum = Nil :: (List (Tuple Int BBCode)) })
+                         modify (\st@ParseState{..} -> st{ accum = new' : accum, stack = stTail, saccum = Nil :: (List (Tuple Int BBCode)) })
                          go tail (level-1)
                        else do
-                         modify (\st -> st{ saccum = (tuple level new' : beneath), stack = stTail })
+                         modify (\st -> st{ saccum = (Tuple level new' : beneath), stack = stTail })
                          go tail (level-1)
 
 
