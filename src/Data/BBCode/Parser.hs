@@ -21,7 +21,7 @@ module Data.BBCode.Parser (
 
 
 
-import Data.Char (isAlphaNum)
+import Data.Char (isAlphaNum, isSpace)
 import Control.Applicative ((<|>))
 import Control.Monad.RWS               (evalRWS, modify, gets)
 import Data.Either                     (Either(..))
@@ -32,7 +32,7 @@ import Data.Maybe                      (Maybe(..))
 import qualified Data.Text as Text
 import Data.Monoid ((<>))
 import Data.Tuple                      (fst, snd)
-import Prelude                         (undefined, Int, pure, map, show, ($), (-), (>=), (<)
+import Prelude                         (undefined, Int, Bool(..), Char, pure, map, show, not, const, ($), (-), (>=), (<)
                                        ,(+), (>), (==), (||), (/=), (&&), (*>), (<$>))
 import Data.Attoparsec.Text
 
@@ -45,19 +45,24 @@ alphaNum = satisfy isAlphaNum
 
 
 
+noneOf :: Text -> Char -> Bool
+noneOf s c = Text.all (/= c) s
+
+
+
 -- | Parses both [tag] and [tag params] | [tag=params]
 --
 open :: Parser Token
 open = do
   _ <- string "["
   c <- letter
-  r <- manyTill letter (char ' ' <|> char '=' <|> char "]")
+  r <- takeWhile (noneOf " =]")
   c' <- (char ' ' <|> char '=' <|> char ']')
   case c' of
     ']' -> pure $ BBOpen Nothing (Text.toLower $ Text.cons c r)
     _   -> do
           pc <- anyChar
-          pr <- manyTill letter (char ']')
+          pr <- takeWhile (/= ']')
           _ <- char ']'
           pure $ BBOpen (Just (Text.cons pc pr)) (Text.toLower $ Text.cons c r)
 
@@ -67,7 +72,7 @@ closed :: Parser Token
 closed = do
   _ <- string "[/"
   c <- letter
-  r <- manyTill anyChar (char ']')
+  r <- takeWhile (/= ']')
   _ <- char ']'
   pure $ BBClosed (Text.toLower $ Text.cons c r)
 
@@ -75,7 +80,7 @@ closed = do
 
 str :: Parser Token
 str = do
-  r <- manyTill (char '[' <|> char ']')
+  r <- takeWhile (noneOf "[]")
   pure $ BBStr r
 
 
@@ -83,20 +88,20 @@ str = do
 stringLiteral :: Parser Text
 stringLiteral = do
   _ <- char '"'
-  s <- manyTill anyChar (char '"')
+  s <- takeWhile (/= '"')
   _ <- char '"'
   pure s
 
 
 
 identifier :: Parser Text
-identifier = manyTill anyChar (char ' ')
+identifier = takeWhile (not <<< isSpace)
 
 
 
 catchAll :: Parser Token
 catchAll = do
-  r <- many' anyChar
+  r <- takeWhile (const True)
   pure $ BBStr r
 
 
@@ -150,8 +155,8 @@ isBBStr _         = false
 
 parseTokens :: Text -> Parser (List Token) -> Either Text (List Token)
 parseTokens input p =
-  case parse p input of
-    Left err     -> Left $ show err
+  case parseOnly p input of
+    Left err     -> Left $ Text.pack err
     Right actual -> Right actual
 
 
@@ -194,7 +199,7 @@ runSize m_params xs =
        Nothing -> Right $ Size defaultSizeOpts xs
        Just sz ->
         -- simple parsing
-        let lr = parse parseBBSize sz in
+        let lr = parseOnly parseBBSize sz in
         case lr of
              Left _  -> Right $ Size defaultSizeOpts xs
              Right v -> Right $ Size (SizeOpts { sizeValue = Just v }) xs
@@ -221,7 +226,7 @@ runColor m_params xs =
        Nothing -> Right $ Color defaultColorOpts xs
        Just sz ->
         -- simple parsing
-        let lr = parse parseBBColor sz in
+        let lr = parseOnly parseBBColor sz in
         case lr of
              Left _  -> Right $ Color defaultColorOpts xs
              Right v -> Right $ Color (ColorOpts { colorValue = Just v }) xs
@@ -231,7 +236,7 @@ runColor m_params xs =
     name' <- stringLiteral
     pure $ ColorName name'
   hex = do
-    hex_code <- char '#' *> many1' alphaNum
+    hex_code <- char '#' *> takeWhile1 isAlphaNum
     pure $ ColorHex (Text.cons '#' hex_code)
   name = do
     name' <- identifier
