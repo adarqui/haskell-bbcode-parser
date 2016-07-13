@@ -17,11 +17,17 @@ module Data.BBCode.Internal (
 
 
 
+import qualified Data.Map  as M
+import           Data.Text (Text)
+
+
+
 type Unit      = ()
 type List a    = [a]
 type Nil       = []
 type Tuple a b = (a, b)
 type Boolean   = Bool
+type StrMap    = M.Map Text
 
 
 

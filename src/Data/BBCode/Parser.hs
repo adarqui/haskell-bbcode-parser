@@ -21,21 +21,27 @@ module Data.BBCode.Parser (
 
 
 
+import Data.Char (isAlphaNum)
+import Control.Applicative ((<|>))
 import Control.Monad.RWS               (evalRWS, modify, gets)
 import Data.Either                     (Either(..))
 import qualified Data.List             as List (filter, uncons, reverse, null, takeWhile, dropWhile)
 import qualified Data.Map as M
 import Data.Text (Text)
 import Data.Maybe                      (Maybe(..))
-import qualified Data.Text as Text (intercalate, toLower, length, drop)
+import qualified Data.Text as Text
 import Data.Monoid ((<>))
 import Data.Tuple                      (fst, snd)
-import Prelude                         (pure, map, show, ($), (-), (>=), (<)
+import Prelude                         (undefined, pure, map, show, ($), (-), (>=), (<)
                                        ,(+), (>), (==), (||), (/=), (&&), (*>), (<$>))
 import Data.Attoparsec.Text
 
 import Data.BBCode.Types
 import Data.BBCode.Internal
+
+
+
+alphaNum = satisfy isAlphaNum
 
 
 
@@ -45,15 +51,15 @@ open :: Parser Token
 open = do
   _ <- string "["
   c <- letter
-  r <- many (isn'tAny " =]")
+  r <- manyTill letter (char ' ' <|> char '=' <|> char "]")
   c' <- (char ' ' <|> char '=' <|> char ']')
   case c' of
-    ']' -> pure $ BBOpen Nothing (fromCharListToLower $ c : r)
+    ']' -> pure $ BBOpen Nothing (Text.toLower $ Text.cons c r)
     _   -> do
-          pc <- item
-          pr <- many (isn'tAny "]")
+          pc <- anyChar
+          pr <- manyTill letter (char ']')
           _ <- char ']'
-          pure $ BBOpen (Just (fromCharList $ pc : pr)) (fromCharListToLower $ c : r)
+          pure $ BBOpen (Just (Text.cons pc pr)) (Text.toLower $ Text.cons c r)
 
 
 
@@ -61,38 +67,37 @@ closed :: Parser Token
 closed = do
   _ <- string "[/"
   c <- letter
-  r <- many (isn'tAny "]")
+  r <- manyTill anyChar (char ']')
   _ <- char ']'
-  pure $ BBClosed (fromCharListToLower $ c : r)
+  pure $ BBClosed (Text.toLower $ Text.cons c r)
 
 
 
 str :: Parser Token
 str = do
-  r <- some (isn'tAny "Nil")
-  pure $ BBStr (fromCharList r)
+  r <- manyTill (char '[' <|> char ']')
+  pure $ BBStr r
 
 
 
 stringLiteral :: Parser Text
 stringLiteral = do
   _ <- char '"'
-  s <- fromCharList <$> some (isn'tAny "\"")
+  s <- manyTill anyChar (char '"')
   _ <- char '"'
   pure s
 
 
 
 identifier :: Parser Text
-identifier = do
-  fromCharList <$> some (isn'tAny " ")
+identifier = manyTill anyChar (char ' ')
 
 
 
 catchAll :: Parser Token
 catchAll = do
-  r <- some item
-  pure $ BBStr (fromCharList r)
+  r <- many' anyChar
+  pure $ BBStr r
 
 
 
@@ -103,7 +108,7 @@ token = do
 
 
 tokens :: Parser (List Token)
-tokens = many token
+tokens = many' token
 
 
 
@@ -113,9 +118,9 @@ concatTokens :: List Token -> List Token
 concatTokens = go Nil
   where
   go accum xs =
-    case uncons xs of
-      Nothing             -> reverse accum
-      Just { head, tail } ->
+    case List.uncons xs of
+      Nothing             -> List.reverse accum
+      Just (head, tail) ->
         let
           heads = List.takeWhile isBBStr tail
           tails = List.dropWhile isBBStr tail
@@ -126,7 +131,7 @@ concatTokens = go Nil
 
 
 
--- | Once we have a list of BBStr's, turn them into one BBStr
+-- | Once we have a list of BBStr's, turn them decimalo one BBStr
 --
 concatBBStr :: List Token -> Token
 concatBBStr _ = undefined
@@ -196,15 +201,15 @@ runSize m_params xs =
   where
   parseBBSize = try px <|> try pt <|> try em
   px = do
-    n <- int
+    n <- decimal
     _ <- string "px"
     pure $ SizePx n
   pt = do
-    n <- int
+    n <- decimal
     _ <- string "pt"
     pure $ SizePt n
   em = do
-    n <- int
+    n <- decimal
     _ <- string "em"
     pure $ SizeEm n
 
@@ -226,7 +231,7 @@ runColor m_params xs =
     name' <- stringLiteral
     pure $ ColorName name'
   hex = do
-    hex_code <- char '#' *> some alphanum
+    hex_code <- char '#' *> some alphaNum
     pure $ ColorHex (fromCharList $ '#' : hex_code)
   name = do
     name' <- identifier
@@ -421,12 +426,12 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
     accum <- gets _.accum
     saccum <- gets _.saccum
 
-    case uncons toks' of
+    case List.uncons toks' of
       Nothing -> do
         case stack of
-          Nil                    -> pure $ Right $ reverse accum
+          Nil                    -> pure $ Right $ List.reverse accum
           (Cons (Tuple _ tag) _) -> pure $ Left $ tag <> " not closed"
-      Just { head, tail } ->
+      Just (head, tail) ->
         case head of
 
           BBStr s           -> do
