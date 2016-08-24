@@ -46,12 +46,13 @@ import           Control.Monad.RWS    (RWS)
 import           Data.Either          (Either)
 import           Data.Foldable        (foldl)
 import qualified Data.List            as List (intersperse)
-import qualified Data.Map             as M
+import           Data.Map             (Map)
+import qualified Data.Map             as Map
 import           Data.Maybe           (Maybe (..))
 import           Data.Monoid          ((<>))
 import           Data.Text            (Text)
 import qualified Data.Text            as Text (pack)
-import           Prelude              (Double, Eq, Int, Show, map, show, ($))
+import           Prelude              (Bool(..), Double, Eq, Int, Show, map, show, ($))
 
 import           Data.BBCode.Internal (List, Tuple, Unit, (<<<))
 
@@ -73,16 +74,18 @@ defaultParseState = ParseState {
 
 
 data ParseReader = ParseReader {
-  linkOpts  :: LinkOpts,
-  imageOpts :: ImageOpts,
-  trfm      :: M.Map Text (BBCode -> BBCode)
+  linkOpts       :: LinkOpts,                        -- ^ link options
+  imageOpts      :: ImageOpts,                       -- ^ image options
+  trfm           :: Map.Map Text (BBCode -> BBCode), -- ^ transformations on a BBCode tag
+  allowNotClosed :: Bool                             -- ^ Allows unclosed tags etc. Turns them into Text.
 }
 
 defaultParseReader :: ParseReader
 defaultParseReader = ParseReader {
-  linkOpts  = defaultLinkOpts,
-  imageOpts = defaultImageOpts,
-  trfm      = M.empty
+  linkOpts       = defaultLinkOpts,
+  imageOpts      = defaultImageOpts,
+  trfm           = Map.empty,
+  allowNotClosed = False
 }
 
 
@@ -104,7 +107,7 @@ flattenTokens = foldl (<>) "" <<< List.intersperse "," <<< map (Text.pack <<< sh
 
 
 
-type BBCodeMap = M.Map TagName BBCodeFn
+type BBCodeMap = Map TagName BBCodeFn
 
 type BBCodeFn   = (Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode)
 type TagName    = Text

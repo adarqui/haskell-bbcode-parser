@@ -22,12 +22,12 @@ module Data.BBCode.Parser (
 
 
 import           Control.Applicative  ((<*), (<|>))
-import           Control.Monad.RWS    (evalRWS, gets, modify)
+import           Control.Monad.RWS    (evalRWS, gets, modify, asks)
 import           Data.Attoparsec.Text
 import           Data.Char            (isAlpha, isAlphaNum, isSpace)
 import           Data.Either          (Either (..))
 import qualified Data.List            as List
-import qualified Data.Map             as M
+import qualified Data.Map             as Map
 import           Data.Maybe           (Maybe (..))
 import           Data.Monoid          ((<>))
 import           Data.Text            (Text)
@@ -36,7 +36,7 @@ import           Data.Tuple           (fst, snd)
 import           Prelude              (Bool (..), Char, Int, const, map, not,
                                        otherwise, pure, show, undefined, ($),
                                        (&&), (*>), (+), (-), (/=), (<), (<$>),
-                                       (==), (>), (>=), (||))
+                                       (==), (>), (>=), (||), error)
 
 import           Data.BBCode.Internal
 import           Data.BBCode.Types
@@ -174,7 +174,7 @@ parseTokens' s = parseTokens s tokens
 
 runBBCode :: Maybe Parameters -> TagName -> List BBCode -> BBCodeMap -> Either ErrorMsg BBCode
 runBBCode params tag doc bmap  =
-  case M.lookup tag bmap of
+  case Map.lookup tag bmap of
        Nothing   -> Left $ tag <> " not found"
        Just bbFn -> bbFn params doc
 
@@ -334,7 +334,7 @@ runMedia _ tag _ _                     = Left $ tag <> " error"
 --
 defaultBBCodeMap :: BBCodeMap
 defaultBBCodeMap =
-  M.fromList [
+  Map.fromList [
     Tuple "b" runBold,
     Tuple "i" runItalic,
     Tuple "u" runUnderline,
@@ -368,7 +368,7 @@ defaultBBCodeMap =
 --
 defaultUnaryBBCodeMap :: BBCodeMap
 defaultUnaryBBCodeMap =
-  M.fromList [
+  Map.fromList [
     Tuple "hr" runHR
   ]
 
@@ -378,7 +378,7 @@ defaultUnaryBBCodeMap =
 --
 defaultConsumeBBCodeMap :: BBCodeMap
 defaultConsumeBBCodeMap =
-  M.fromList [
+  Map.fromList [
     Tuple "pre" runPre,
     Tuple "code" runCode
   ]
@@ -424,7 +424,7 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
   where
 
   try_maps params tag =
-    case (M.lookup tag bmap, M.lookup tag cmap) of
+    case (Map.lookup tag bmap, Map.lookup tag cmap) of
        (Just bmap_fn, Nothing) -> \xs -> runBBCode params tag xs bmap
        (Nothing, Just cmap_fn) -> \xs -> runBBCode params tag xs cmap
        -- TODO FIXME: need a user supplied FN to handle errors, this is what runBBCode was for; but not anymore
@@ -441,7 +441,11 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
       Nothing -> do
         case stack of
           Nil                    -> pure $ Right $ List.reverse accum
-          (Cons (Tuple _ tag) _) -> pure $ Left $ tag <> " not closed"
+          (Cons (Tuple _ tag) _) -> do
+            allow_not_closed <- asks allowNotClosed
+            if allow_not_closed
+              then pure $ Right $ List.reverse $ Text ("["<>tag<>"]") : accum
+              else pure $ Left $ tag <> " not closed"
       Just (head, tail) ->
         case head of
 
@@ -461,7 +465,7 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
             -- 1. a unary operator - no closing tag
             -- 2. a consumer - consumes all other tags until the consumer's closing tag is found
             -- 3. a normal bbcode operator which has an open tag, content, and a closing tag
-            if M.member tag umap
+            if Map.member tag umap
                then do
                  case (runBBCode params tag Nil umap) of
                    Left err   -> pure $ Left err
@@ -469,8 +473,14 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
                      modify (\st@ParseState{..} -> st{ accum = (new' : accum) })
                      go tail level
                else do
-                 modify (\st@ParseState{..} -> st{ stack = (Tuple params tag) : stack })
-                 go tail (level+1)
+                 if Map.member tag bmap || Map.member tag cmap
+                   then do
+                     modify (\st@ParseState{..} -> st{ stack = (Tuple params tag) : stack })
+                     go tail (level+1)
+                   else do
+                     -- tag not found
+                     modify (\st@ParseState{..} -> st { accum = Text ("["<>tag<>"]") : accum })
+                     go tail level
 
           BBClosed tag      -> do
             case List.uncons stack of

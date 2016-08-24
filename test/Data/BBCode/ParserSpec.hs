@@ -117,8 +117,21 @@ spec = do
       parseBBCode "[/b]hello"
         `shouldBe` (Left "b not pushed")
 
+      parseBBCode "90 [degree] angle"
+        `shouldBe` (Right $ Cons (Text "90 ") (Cons (Text "[degree]") (Cons (Text " angle") Nil)))
+
+      parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "90 [degree] angle [b]yo[/b]"
+        `shouldBe` (Right $ Cons (Text "90 ") (Cons (Text "[degree]") (Cons (Text " angle ") (Cons (Bold (Cons (Text "yo") Nil)) Nil))))
+
+      parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "90 [degree] angle"
+        `shouldBe` (Right $ Cons (Text "90 ") (Cons (Text "[degree]") (Cons (Text " angle") Nil)))
+
       parseBBCode "[b]hello"
         `shouldBe` (Left "b not closed")
+
+      -- TODO FIXME: should be [b]hello, not [b]
+      parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[b]hello"
+        `shouldBe` (Right $ Cons (Text "[b]") Nil)
 
       parseBBCode "[b]hello[/b]"
         `shouldBe` (Right $ Cons (Bold (Cons (Text "hello") Nil)) Nil)
