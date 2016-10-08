@@ -1,0 +1,6 @@
+quote:
+======
+
+[quote author=author link=link date=1306339931]
+something
+[/quote]
