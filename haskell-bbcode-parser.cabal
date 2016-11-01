@@ -34,6 +34,7 @@ test-suite haskell-bbcode-parser-test
   other-modules:       Data.BBCode.ParserSpec
                        Data.BBCode.TypesSpec
   build-depends:       base
+                     , containers
                      , hspec
                      , text
                      , haskell-bbcode-parser

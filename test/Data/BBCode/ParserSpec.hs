@@ -11,6 +11,7 @@ import           Data.BBCode.Internal
 import           Data.BBCode.Parser
 import           Data.BBCode.Types
 import           Data.Monoid          ((<>))
+import qualified Data.Map             as Map
 import qualified Data.Text            as Text
 import           Test.Hspec
 
@@ -42,6 +43,50 @@ spec = do
 
      concatBBStr (Cons (BBStr "ping") (Cons (BBStr " ") (Cons (BBStr "pong") Nil)))
        `shouldBe` (BBStr "ping pong")
+
+
+
+  describe "splitParams" $ do
+    it "should split params out into unparsed k=v pairs" $ do
+
+      splitParams ""
+        `shouldBe` Right []
+
+      splitParams "k v"
+        `shouldBe` Right ["k", "v"]
+
+      splitParams "link=adarq.org"
+        `shouldBe` Right ["link=adarq.org"]
+
+      splitParams "author=adarqui link=adarq.org date=10101010"
+        `shouldBe` Right ["author=adarqui","link=adarq.org","date=10101010"]
+
+
+  describe "splitKVs" $ do
+    it "should split params into a list of (k,v) tuples" $ do
+
+      splitKVs (splitParams "k v p")
+        `shouldBe` []
+
+      splitKVs (splitParams "author=adarqui link=adarq.org date=10101010")
+        `shouldBe` [("author","adarqui"),("link","adarq.org"),("date","10101010")]
+
+
+
+  describe "buildParamMap" $ do
+    it "should build a param map.." $ do
+
+      buildParamMap ""
+        `shouldBe` Map.empty
+
+      buildParamMap "osdkskd = dk odk df =df =fff =df= d=f kdf odfk odfk ofd = k= "
+        `shouldBe` Map.fromList [("d","f")]
+
+      buildParamMap "k=v"
+        `shouldBe` Map.fromList [("k","v")]
+
+      buildParamMap "author=adarqui link=adarq.org date=10101010"
+        `shouldBe` Map.fromList [("author","adarqui"), ("link","adarq.org"), ("date","10101010")]
 
 
 
@@ -194,6 +239,11 @@ spec = do
       parseBBCode ("[b]" <> big_string_10024 <> "[/b]")
         `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_10024) Nil)) Nil)
 
+      parseBBCode "[quote]hello[/quote]"
+        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
+
+      parseBBCode "[quote author=author link=link date=1306339931]hello[/quote]"
+        `shouldBe` (Right $ Cons (Quote (Just "author") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
 
 --    Assert.equal
 --      (Right $ Cons ..

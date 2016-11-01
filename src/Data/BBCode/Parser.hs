@@ -10,6 +10,9 @@ module Data.BBCode.Parser (
   tokens,
   concatTokens,
   concatBBStr,
+  splitParams,
+  splitKVs,
+  buildParamMap,
   runBBCode,
   parseTokens,
   parseTokens',
@@ -25,8 +28,9 @@ import           Control.Applicative  ((<*), (<|>))
 import           Control.Monad.RWS    (evalRWS, gets, modify, asks)
 import           Data.Attoparsec.Text
 import           Data.Char            (isAlpha, isAlphaNum, isSpace)
-import           Data.Either          (Either (..))
+import           Data.Either          (Either (..), rights)
 import qualified Data.List            as List
+import           Data.Map             (Map)
 import qualified Data.Map             as Map
 import           Data.Maybe           (Maybe (..))
 import           Data.Monoid          ((<>))
@@ -36,7 +40,7 @@ import           Data.Tuple           (fst, snd)
 import           Prelude              (Bool (..), Char, Int, const, map, not,
                                        otherwise, pure, show, undefined, ($),
                                        (&&), (*>), (+), (-), (/=), (<), (<$>),
-                                       (==), (>), (>=), (||), error)
+                                       (==), (>), (>=), (||), error, fmap)
 
 import           Data.BBCode.Internal
 import           Data.BBCode.Types
@@ -159,6 +163,39 @@ isBBStr _         = false
 
 
 
+-- | Split text into unparsed params
+--
+splitParams :: Text -> Either [Char] [Text]
+splitParams = parseOnly (sepBy (takeWhile1 (/= ' ')) (char ' '))
+
+
+
+-- | Split unparsed k=v's into (k,v)'s
+--
+--
+-- splitKVs :: Either [Char] [Text] -> Either [Char] [Text]
+-- splitKVs = fmap (parseOnly (sepBy (many1 (satisfy isAlphaNum)) (char '=')))
+-- splitKVs = fmap (parseOnly (sepBy (takeWhile1 isAlphaNum) (char '=')))
+-- splitKVs (Left e) = Left e
+splitKvs (Left  v) = Left v
+splitKVs (Right v) = rights $ map (\s -> toTup $ parseOnly (sepBy (takeWhile1 acceptableChars) (char '=')) s) v
+  where
+  toTup (Right (x:y:[])) = Right (x, y)
+  toTup _                = Left "toTup error"
+  acceptableChars c = c /= '='
+
+
+
+-- | Builds a map of key/value params
+--
+buildParamMap :: Text -> Map Text Text
+buildParamMap params =
+  case splitKVs (splitParams params) of
+    []  -> Map.empty
+    kvs -> Map.fromList kvs
+
+
+
 parseTokens :: Text -> Parser (List Token) -> Either Text (List Token)
 parseTokens input p =
   case parseOnly (p <* endOfInput) input of
@@ -260,7 +297,29 @@ runAlignRight :: BBCodeFn
 runAlignRight = runTextSimple AlignRight "Right"
 
 runQuote :: BBCodeFn
-runQuote = runTextSimple (Quote Nothing) "Quote"
+runQuote m_params xs = -- runTextSimple (Quote Nothing Nothing Nothing) "Quote"
+  case m_params of
+       Nothing     -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
+       Just params ->
+        -- simple parsing
+        let lr = parseOnly parseBBQuote params in
+        case lr of
+             Left _  -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
+             Right v -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
+  where
+  parseBBQuote = try author <|> try link <|> try date
+  author = do
+    n <- decimal
+    _ <- string "author"
+    pure $ SizePx n
+  link = do
+    n <- decimal
+    _ <- string "link"
+    pure $ SizePt n
+  date = do
+    n <- decimal
+    _ <- string "date"
+    pure $ SizeEm n
 
 runLink :: BBCodeFn
 runLink m_params (Cons (Text s) Nil) =

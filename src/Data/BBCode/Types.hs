@@ -21,7 +21,7 @@ module Data.BBCode.Types (
   BBColor (..),
   ImageSize (..),
   QuoteAuthor,
-  LinkURL,
+  LinkText,
   LinkName,
   MediaURL,
   ImageHeight,
@@ -131,8 +131,8 @@ data BBCode
   | Center     (List BBCode)
   | AlignLeft  (List BBCode)
   | AlignRight (List BBCode)
-  | Quote      (Maybe QuoteAuthor) (List BBCode)
-  | Link       (Maybe LinkName) LinkURL
+  | Quote      (Maybe QuoteAuthor) (Maybe LinkText) (Maybe DateText) (List BBCode)
+  | Link       (Maybe LinkName) LinkText
   | List       BBList
   | OrdList    BBList
   | Table      BBTable
@@ -189,8 +189,9 @@ data BBColor
 
 
 type QuoteAuthor = Text
-type LinkURL     = Text
+type LinkText    = Text
 type LinkName    = Text
+type DateText    = Text
 type MediaURL    = Text
 type ImageHeight = ImageSize
 type ImageWidth  = ImageSize
