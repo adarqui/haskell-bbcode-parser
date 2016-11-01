@@ -297,29 +297,15 @@ runAlignRight :: BBCodeFn
 runAlignRight = runTextSimple AlignRight "Right"
 
 runQuote :: BBCodeFn
-runQuote m_params xs = -- runTextSimple (Quote Nothing Nothing Nothing) "Quote"
+runQuote m_params xs =
   case m_params of
        Nothing     -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
-       Just params ->
-        -- simple parsing
-        let lr = parseOnly parseBBQuote params in
-        case lr of
-             Left _  -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
-             Right v -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
-  where
-  parseBBQuote = try author <|> try link <|> try date
-  author = do
-    n <- decimal
-    _ <- string "author"
-    pure $ SizePx n
-  link = do
-    n <- decimal
-    _ <- string "link"
-    pure $ SizePt n
-  date = do
-    n <- decimal
-    _ <- string "date"
-    pure $ SizeEm n
+       Just params -> runTextSimple (Quote author link date) "Quote" Nothing xs
+        where
+        param_map = buildParamMap params
+        author = Map.lookup "author" param_map
+        link   = Map.lookup "link" param_map
+        date   = Map.lookup "date" param_map
 
 runLink :: BBCodeFn
 runLink m_params (Cons (Text s) Nil) =
