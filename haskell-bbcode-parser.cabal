@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Data.BBCode
+                       Data.BBCode.Emoticon
                        Data.BBCode.Parser
                        Data.BBCode.Types
                        Data.BBCode.Internal
