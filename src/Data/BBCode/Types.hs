@@ -54,6 +54,7 @@ import           Data.Text            (Text)
 import qualified Data.Text            as Text (pack)
 import           Prelude              (Bool(..), Double, Eq, Int, Show, map, show, ($))
 
+import           Data.BBCode.Emoticon (Emoticons)
 import           Data.BBCode.Internal (List, Tuple, Unit, (<<<))
 
 
@@ -78,7 +79,7 @@ data ParseReader = ParseReader {
   imageOpts      :: ImageOpts,                       -- ^ image options
   trfm           :: Map.Map Text (BBCode -> BBCode), -- ^ transformations on a BBCode tag
   allowNotClosed :: Bool,                            -- ^ Allows unclosed tags etc. Turns them into Text.
-  emoticons      :: Maybe ([(Text, Text)], Text)     -- ^ A list of emoticons and their text-meaning, and a base url
+  emoticons      :: Maybe Emoticons                  -- ^ A Map of emoticons and their text-meaning, and a base url
 }
 
 defaultParseReader :: ParseReader
@@ -141,6 +142,7 @@ data BBCode
   | Pre        Text
   | Code       (Maybe Text) Text
   | Move       (List BBCode)
+  | Emoticon   Text
   | Text       Text
   | Image      ImageOpts MediaURL
   | Youtube    MediaURL
