@@ -7,6 +7,7 @@ module Data.BBCode.ParserSpec (
 
 
 
+import           Data.BBCode.Emoticon
 import           Data.BBCode.Internal
 import           Data.BBCode.Parser
 import           Data.BBCode.Types
@@ -244,6 +245,9 @@ spec = do
 
       parseBBCode "[quote author=author link=link date=1306339931]hello[/quote]"
         `shouldBe` (Right $ Cons (Quote (Just "author") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
+
+      parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "hi :)..."
+        `shouldBe` (Right $ Cons (Text "hi ") (Cons (Emoticon ":)") (Cons (Text "...") Nil)))
 
 --    Assert.equal
 --      (Right $ Cons ..

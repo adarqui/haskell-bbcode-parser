@@ -454,6 +454,13 @@ parseTextAndNewlines = go Nil
 
 
 
+-- | Pull emoticons out of Text
+--
+textAndEmoticons :: List BBCode -> List BBCode
+textAndEmoticons xs = xs
+
+
+
 parseBBCodeFromTokens :: List Token -> ParseEff (Either Text BBDoc)
 parseBBCodeFromTokens = parseBBCodeFromTokens' defaultBBCodeMap defaultUnaryBBCodeMap defaultConsumeBBCodeMap
 
