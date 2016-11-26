@@ -483,7 +483,12 @@ parseBBCodeFromTokens' ::
   -> BBCodeMap
   -> List Token
   -> ParseEff (Either Text BBDoc)
-parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
+parseBBCodeFromTokens' bmap umap cmap toks = do
+  lr_parsed       <- go toks 0
+  m_emoticons_map <- asks emoticons
+  case (m_emoticons_map, lr_parsed) of
+    (Just (emoticons_map, _), Right bb_doc) -> pure $ Right $ textAndEmoticons emoticons_map bb_doc
+    _                                       -> pure lr_parsed
   where
 
   try_maps params tag =

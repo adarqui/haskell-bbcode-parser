@@ -250,7 +250,7 @@ spec = do
         `shouldBe` (Right $ Cons (Emoticon "ninja") Nil)
 
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "hi :)..."
-        `shouldBe` (Right $ Cons (Text "hi ") (Cons (Emoticon ":)") (Cons (Text "...") Nil)))
+        `shouldBe` (Right $ Cons (Text "hi ") (Cons (Emoticon "smile") (Cons (Text "...") Nil)))
 
 --    Assert.equal
 --      (Right $ Cons ..
