@@ -265,3 +265,6 @@ spec = do
 
       textAndEmoticons defaultEmoticonsMap [Text "hi :)..."]
         `shouldBe` [Text "hi ", Emoticon "smile", Text "..."]
+
+      textAndEmoticons defaultEmoticonsMap [Text ":ninja: :) :ibjumping::ibrunning::ibsquatting:"]
+        `shouldBe` [Emoticon "ninja", Text " ", Emoticon "smile", Text " ", Emoticon "jumping", Emoticon "running", Emoticon "squatting"]
