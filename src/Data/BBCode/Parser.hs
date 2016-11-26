@@ -458,20 +458,17 @@ parseTextAndNewlines = go Nil
 -- | Pull emoticons out of Text
 --
 textAndEmoticons :: Map Text Text -> List BBCode -> List BBCode
-textAndEmoticons emoticon_map codes = go codes []
+textAndEmoticons emoticon_map xs = go emoticons xs
   where
   emoticons                      = Map.toList emoticon_map
-  go [] accum                    = accum
-  go (Text text:bbcodes) accum   = go bbcodes (go2 emoticons [Text text] <> accum)
-  go (bbcode:bbcodes) accum      = go bbcodes (bbcode : accum)
-  go2 [] codes                   = codes
-  go2 ((emot,emot_key):emots) codes         = let
-                                                new_codes = map (\code -> case code of
-                                                                            Text text -> case Text.splitOn emot text of
-                                                                                           []     -> [code]
-                                                                                           broken -> List.filter (/= Text "") $ List.intersperse (Emoticon emot_key) (map Text broken)
-                                                                            other     -> [other]) codes
-                                              in go2 emots (List.concat new_codes)
+  go [] codes                   = codes
+  go ((emot,emot_key):emots) codes = let
+                                       new_codes = map (\code -> case code of
+                                                                   Text text -> case Text.splitOn emot text of
+                                                                                  []     -> [code]
+                                                                                  broken -> List.filter (/= Text "") $ List.intersperse (Emoticon emot_key) (map Text broken)
+                                                                   other     -> [other]) codes
+                                     in go emots (List.concat new_codes)
 
 
 
