@@ -264,4 +264,4 @@ spec = do
         `shouldBe` [Emoticon "ninja"]
 
       textAndEmoticons defaultEmoticonsMap [Text "hi :)..."]
-        `shouldBe` [Text "hi ", Emoticon ":)", Text "..."]
+        `shouldBe` [Text "hi ", Emoticon "smile", Text "..."]
