@@ -246,9 +246,22 @@ spec = do
       parseBBCode "[quote author=author link=link date=1306339931]hello[/quote]"
         `shouldBe` (Right $ Cons (Quote (Just "author") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
 
+      parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) ":ninja:"
+        `shouldBe` (Right $ Cons (Emoticon "ninja") Nil)
+
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "hi :)..."
         `shouldBe` (Right $ Cons (Text "hi ") (Cons (Emoticon ":)") (Cons (Text "...") Nil)))
 
 --    Assert.equal
 --      (Right $ Cons ..
 --      $ parseBBCode "[quote author=adarqui]hello[/quote]"
+
+
+  describe "textAndEmoticons" $ do
+    it "parses emoticons out of a list of bbcode tokens" $ do
+
+      textAndEmoticons defaultEmoticonsMap [Text ":ninja:"]
+        `shouldBe` [Emoticon "ninja"]
+
+      textAndEmoticons defaultEmoticonsMap [Text "hi :)..."]
+        `shouldBe` [Text "hi ", Emoticon ":)", Text "..."]

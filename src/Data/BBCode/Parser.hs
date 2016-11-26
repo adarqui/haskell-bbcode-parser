@@ -19,7 +19,8 @@ module Data.BBCode.Parser (
   parseBBCodeFromTokens,
   parseBBCodeFromTokens',
   parseBBCode,
-  parseBBCodeWith
+  parseBBCodeWith,
+  textAndEmoticons
 ) where
 
 
@@ -456,8 +457,8 @@ parseTextAndNewlines = go Nil
 
 -- | Pull emoticons out of Text
 --
-textAndEmoticons :: List BBCode -> List BBCode
-textAndEmoticons xs = xs
+textAndEmoticons :: Map Text Text -> List BBCode -> List BBCode
+textAndEmoticons emoticon_map xs = xs
 
 
 
