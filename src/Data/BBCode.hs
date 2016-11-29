@@ -4,5 +4,6 @@ module Data.BBCode (
 
 
 
-import           Data.BBCode.Parser as A
-import           Data.BBCode.Types  as A
+import           Data.BBCode.Emoticon as A
+import           Data.BBCode.Parser   as A
+import           Data.BBCode.Types    as A
