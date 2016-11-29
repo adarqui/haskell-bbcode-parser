@@ -31,6 +31,8 @@ import           Data.Attoparsec.Text
 import           Data.Char            (isAlpha, isAlphaNum, isSpace)
 import           Data.Either          (Either (..), rights)
 import qualified Data.List            as List
+import           Data.Bimap           (Bimap)
+import qualified Data.Bimap           as Bimap
 import           Data.Map             (Map)
 import qualified Data.Map             as Map
 import           Data.Maybe           (Maybe (..))
@@ -457,11 +459,11 @@ parseTextAndNewlines = go Nil
 
 -- | Pull emoticons out of Text
 --
-textAndEmoticons :: Map Text Text -> List BBCode -> List BBCode
+textAndEmoticons :: Bimap Text Text -> List BBCode -> List BBCode
 textAndEmoticons emoticon_map xs = go emoticons xs
   where
-  emoticons                      = Map.toList emoticon_map
-  go [] codes                   = codes
+  emoticons                      = Bimap.toList emoticon_map
+  go [] codes                    = codes
   go ((emot,emot_key):emots) codes = let
                                        new_codes = map (\code -> case code of
                                                                    Text text -> case Text.splitOn emot text of
@@ -487,8 +489,8 @@ parseBBCodeFromTokens' bmap umap cmap toks = do
   lr_parsed       <- go toks 0
   m_emoticons_map <- asks emoticons
   case (m_emoticons_map, lr_parsed) of
-    (Just (emoticons_map, _), Right bb_doc) -> pure $ Right $ textAndEmoticons emoticons_map bb_doc
-    _                                       -> pure lr_parsed
+    (Just (emoticons_bimap, _), Right bb_doc) -> pure $ Right $ textAndEmoticons emoticons_bimap bb_doc
+    _                                         -> pure lr_parsed
   where
 
   try_maps params tag =

@@ -3,23 +3,23 @@
 module Data.BBCode.Emoticon (
     Emoticons
   , defaultEmoticons
-  , defaultEmoticonsMap
+  , defaultEmoticonsBimap
 ) where
 
 
 
-import           Data.Map  (Map)
-import qualified Data.Map  as Map
+import           Data.Bimap  (Bimap)
+import qualified Data.Bimap  as Bimap
 import           Data.Text (Text)
 
 
 
-type Emoticons = (Map Text Text, Text) -- ^ A Map of emoticons and their text-meaning, and a base url
+type Emoticons = (Bimap Text Text, Text) -- ^ A Bimap of emoticons and their text-meaning, and a base url
 
 
 
-defaultEmoticonsMap :: Map Text Text
-defaultEmoticonsMap = Map.fromList $
+defaultEmoticonsBimap :: Bimap Text Text
+defaultEmoticonsBimap = Bimap.fromList $
   [ ( ":)"                       , "smile")
   , ( ":("                       , "frown")
   , ( "O0"                       , "afro")
@@ -76,4 +76,4 @@ defaultEmoticonsMap = Map.fromList $
 
 
 defaultEmoticons :: Emoticons
-defaultEmoticons = (defaultEmoticonsMap, "/emoticons")
+defaultEmoticons = (defaultEmoticonsBimap, "/emoticons")

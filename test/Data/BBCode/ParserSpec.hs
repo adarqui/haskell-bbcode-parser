@@ -260,11 +260,11 @@ spec = do
   describe "textAndEmoticons" $ do
     it "parses emoticons out of a list of bbcode tokens" $ do
 
-      textAndEmoticons defaultEmoticonsMap [Text ":ninja:"]
+      textAndEmoticons defaultEmoticonsBimap [Text ":ninja:"]
         `shouldBe` [Emoticon "ninja"]
 
-      textAndEmoticons defaultEmoticonsMap [Text "hi :)..."]
+      textAndEmoticons defaultEmoticonsBimap [Text "hi :)..."]
         `shouldBe` [Text "hi ", Emoticon "smile", Text "..."]
 
-      textAndEmoticons defaultEmoticonsMap [Text ":ninja: :) :ibjumping::ibrunning::ibsquatting:"]
+      textAndEmoticons defaultEmoticonsBimap [Text ":ninja: :) :ibjumping::ibrunning::ibsquatting:"]
         `shouldBe` [Emoticon "ninja", Text " ", Emoticon "smile", Text " ", Emoticon "jumping", Emoticon "running", Emoticon "squatting"]
