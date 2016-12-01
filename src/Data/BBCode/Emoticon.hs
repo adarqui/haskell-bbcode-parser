@@ -4,13 +4,17 @@ module Data.BBCode.Emoticon (
     Emoticons
   , defaultEmoticons
   , defaultEmoticonsBimap
+  , printEmoticons
+  , printEmoticonsIO
 ) where
 
 
 
-import           Data.Bimap  (Bimap)
-import qualified Data.Bimap  as Bimap
-import           Data.Text (Text)
+import           Data.Bimap   (Bimap)
+import qualified Data.Bimap   as Bimap
+import           Data.Text    (Text)
+import qualified Data.Text    as Text
+import qualified Data.Text.IO as Text
 
 
 
@@ -77,3 +81,15 @@ defaultEmoticonsBimap = Bimap.fromList $
 
 defaultEmoticons :: Emoticons
 defaultEmoticons = (defaultEmoticonsBimap, "/emoticons")
+
+
+
+-- | Just for printing the codes so I can paste them into my forum
+--
+printEmoticons :: Emoticons -> Text
+printEmoticons (emoticons_bimap, _) = Text.intercalate " " $ Bimap.keys emoticons_bimap
+
+
+
+printEmoticonsIO :: Emoticons -> IO ()
+printEmoticonsIO = Text.putStrLn . printEmoticons
