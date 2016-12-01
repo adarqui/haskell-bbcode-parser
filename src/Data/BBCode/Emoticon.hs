@@ -43,7 +43,7 @@ defaultEmoticonsBimap = Bimap.fromList $
   , ( ";)"                       , "wink")
   , ( ":headbang:"               , "headbang")
   , ( ":huh:"                    , "huh")
-  , ( ":uhhhfacepalm:"           , "uhhhfacepalm")
+  , ( ":uhhhfacepalm:"           , "facepalm")
   , ( ":facepalm:"               , "facepalm")
   , ( ":jumping:"                , "jumping")
   , ( ":running:"                , "running")
