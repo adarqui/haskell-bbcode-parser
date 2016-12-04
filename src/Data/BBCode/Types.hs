@@ -79,7 +79,11 @@ data ParseReader = ParseReader {
   imageOpts      :: ImageOpts,                       -- ^ image options
   trfm           :: Map.Map Text (BBCode -> BBCode), -- ^ transformations on a BBCode tag
   allowNotClosed :: Bool,                            -- ^ Allows unclosed tags etc. Turns them into Text.
-  emoticons      :: Maybe Emoticons                  -- ^ A Map of emoticons and their text-meaning, and a base url
+  emoticons      :: Maybe Emoticons,                 -- ^ A Map of emoticons and their text-meaning, and a base url
+  -- stuff for [quote] and perhaps other bbcodes
+  authorResource :: Maybe (Text -> Text),            -- ^ Transform an "author" to a "resource" (url perhaps?)
+  linkResource   :: Maybe (Text -> Text),            -- ^ Transform a "link" to a "resource" (url perhaps?)
+  authorAvatar   :: Maybe (Text -> Text)             -- ^ Transform an "author" to an "avatar resource" (image url perhaps?)
 }
 
 defaultParseReader :: ParseReader
@@ -88,7 +92,10 @@ defaultParseReader = ParseReader {
   imageOpts      = defaultImageOpts,
   trfm           = Map.empty,
   allowNotClosed = False,
-  emoticons      = Nothing
+  emoticons      = Nothing,
+  authorResource = Nothing,
+  linkResource   = Nothing,
+  authorAvatar   = Nothing
 }
 
 
