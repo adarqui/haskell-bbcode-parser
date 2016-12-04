@@ -83,10 +83,15 @@ open = do
 
 
 
+-- | Parses a closing tag: [/tag]
+-- Closing tags may also contain unparsed "meta data", for example:
+-- [quote author=adarqui link=poop date=2016 id=111]hello![/quote id=111]
+--
 closed :: Parser Token
 closed = do
   _  <- string "[/"
-  bb <- takeWhile1 (noneOfAndAllOf "]" isAlpha)
+  bb <- takeWhile1 isAlphaNum
+  _  <- takeWhile (/= ']')
   _  <- char ']'
   pure $ BBClosed (Text.toLower bb)
 

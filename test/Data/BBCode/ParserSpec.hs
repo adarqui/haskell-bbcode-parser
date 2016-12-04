@@ -243,6 +243,9 @@ spec = do
       parseBBCode "[quote]hello[/quote]"
         `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
 
+      parseBBCode "[quote meta=poop]hello[/quote meta=poop]"
+        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
+
       parseBBCode "[quote author=author link=link date=1306339931]hello[/quote]"
         `shouldBe` (Right $ Cons (Quote (Just "author") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
 
