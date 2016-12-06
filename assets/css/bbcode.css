@@ -48,6 +48,9 @@
 .bbcode-quote {
   /* TODO FIXME: I really want this to be aliceblue, going from very light to dark */
   background-color: rgba(200,230,250,.5);
+  /* ideas:
+   * rgba(100,100,100,.1)
+   */
 }
 
 .bbcode-quote-title {
