@@ -307,13 +307,14 @@ runAlignRight = runTextSimple AlignRight "Right"
 runQuote :: BBCodeFn
 runQuote m_params xs =
   case m_params of
-       Nothing     -> runTextSimple (Quote Nothing Nothing Nothing) "Quote" Nothing xs
-       Just params -> runTextSimple (Quote author link date) "Quote" Nothing xs
+       Nothing     -> runTextSimple (Quote Nothing Nothing Nothing Nothing) "Quote" Nothing xs
+       Just params -> runTextSimple (Quote m_author m_avatar m_link m_date) "Quote" Nothing xs
         where
         param_map = buildParamMap params
-        author = Map.lookup "author" param_map
-        link   = Map.lookup "link" param_map
-        date   = Map.lookup "date" param_map
+        m_author  = Map.lookup "author" param_map
+        m_avatar  = Map.lookup "avatar" param_map
+        m_link    = Map.lookup "link" param_map
+        m_date    = Map.lookup "date" param_map
 
 runLink :: BBCodeFn
 runLink m_params (Cons (Text s) Nil) =

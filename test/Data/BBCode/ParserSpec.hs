@@ -241,13 +241,13 @@ spec = do
         `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_10024) Nil)) Nil)
 
       parseBBCode "[quote]hello[/quote]"
-        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
+        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
 
       parseBBCode "[quote meta=poop]hello[/quote meta=poop]"
-        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
+        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
 
-      parseBBCode "[quote author=author link=link date=1306339931]hello[/quote]"
-        `shouldBe` (Right $ Cons (Quote (Just "author") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
+      parseBBCode "[quote author=author avatar=avatar link=link date=1306339931]hello[/quote]"
+        `shouldBe` (Right $ Cons (Quote (Just "author") (Just "avatar") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
 
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) ":ninja:"
         `shouldBe` (Right $ Cons (Emoticon "ninja") Nil)
