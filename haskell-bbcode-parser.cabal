@@ -1,5 +1,5 @@
 name:                haskell-bbcode-parser
-version:             0.1.0.5
+version:             0.1.0.6
 synopsis:            Initial project template from stack
 description:         Please see README.md
 homepage:            https://github.com/adarqui/haskell-bbcode-parser#readme
