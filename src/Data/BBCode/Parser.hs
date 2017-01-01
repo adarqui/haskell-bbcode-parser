@@ -493,12 +493,8 @@ parseBBCodeFromTokens' ::
   -> BBCodeMap
   -> List Token
   -> ParseEff (Either Text BBDoc)
-parseBBCodeFromTokens' bmap umap cmap toks = do
-  lr_parsed       <- go toks 0
-  m_emoticons_map <- asks emoticons
-  case (m_emoticons_map, lr_parsed) of
-    (Just (emoticons_bimap, _), Right bb_doc) -> pure $ Right $ textAndEmoticons emoticons_bimap bb_doc
-    _                                         -> pure lr_parsed
+parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
+
   where
 
   try_maps params tag =
@@ -518,7 +514,12 @@ parseBBCodeFromTokens' bmap umap cmap toks = do
     case List.uncons toks' of
       Nothing -> do
         case stack of
-          Nil                    -> pure $ Right $ List.reverse accum
+          Nil                    -> do
+            m_emoticons_map <- asks emoticons
+            let accum' = case m_emoticons_map of
+                           Just (emoticons_bimap, _) -> textAndEmoticons emoticons_bimap accum
+                           Nothing                   -> List.reverse accum
+            pure $ Right accum'
           (Cons (Tuple _ tag) _) -> do
             allow_not_closed <- asks allowNotClosed
             if allow_not_closed
