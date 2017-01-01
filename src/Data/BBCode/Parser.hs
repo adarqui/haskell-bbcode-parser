@@ -578,7 +578,7 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
                   Right new' -> do
                     if List.null stTail
                        then do
-                         modify (\st@ParseState{..} -> st{ accum = new' : accum, stack = stTail, saccum = Nil :: (List (Tuple Int BBCode)) })
+                         modify (\st@ParseState{..} -> st{ accum = new' : accum, stack = stTail, saccum = [] :: [Tuple Int BBCode] })
                          go tail (level-1)
                        else do
                          modify (\st -> st{ saccum = (Tuple level new' : beneath), stack = stTail })
