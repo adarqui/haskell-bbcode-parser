@@ -289,3 +289,6 @@ spec = do
 
       textAndEmoticons defaultEmoticonsBimap [Text ":ninja: :) :jumping::running::squatting:"]
         `shouldBe` [Emoticon "ninja", Text " ", Emoticon "smile", Text " ", Emoticon "jumping", Emoticon "running", Emoticon "squatting"]
+
+      textAndEmoticons defaultEmoticonsBimap [Text "1[b]:ninja:[/b]2"]
+        `shouldBe` [Text "1[b]", Emoticon "ninja", Text "[/b]2"]

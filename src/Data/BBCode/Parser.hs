@@ -307,10 +307,8 @@ runAlignRight = runTextSimple AlignRight "Right"
 runQuote :: BBCodeFn
 runQuote m_params xs =
   case m_params of
-       -- Nothing     -> runTextSimple (Quote Nothing Nothing Nothing Nothing) "Quote" Nothing xs
-       -- Just params -> runTextSimple (Quote m_author m_avatar m_link m_date) "Quote" Nothing xs
-       Nothing     -> Right $ Quote Nothing Nothing Nothing Nothing xs
-       Just params -> Right $ Quote m_author m_avatar m_link m_date xs
+       Nothing     -> runTextSimple (Quote Nothing Nothing Nothing Nothing) "Quote" Nothing xs
+       Just params -> runTextSimple (Quote m_author m_avatar m_link m_date) "Quote" Nothing xs
         where
         param_map = buildParamMap params
         m_author  = Map.lookup "author" param_map
@@ -515,23 +513,35 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
       Nothing -> do
         case stack of
           []              -> do
+
+            -- Why do I need this twice? Don't ask
             m_emoticons_map <- asks emoticons
             let accum' = case m_emoticons_map of
                            Just (emoticons_bimap, _) -> textAndEmoticons emoticons_bimap accum
                            Nothing                   -> List.reverse accum
+
             pure $ Right accum'
+
           (Tuple _ tag:_) -> do
             -- TODO FIXME: Add emoticon check here?
             allow_not_closed <- asks allowNotClosed
             if allow_not_closed
               then pure $ Right $ List.reverse $ Text ("["<>tag<>"]") : accum
               else pure $ Left $ tag <> " not closed"
+
       Just (head, tail) ->
         case head of
 
           BBStr s           -> do
             let
-              text_and_newlines = parseTextAndNewlines s
+              text_and_newlines' = parseTextAndNewlines s
+
+            -- Why do I need this twice? Don't ask
+            m_emoticons_map <- asks emoticons
+            let text_and_newlines = case m_emoticons_map of
+                           Just (emoticons_bimap, _) -> textAndEmoticons emoticons_bimap text_and_newlines'
+                           Nothing                   -> text_and_newlines'
+
             if List.null stack
                then do
                  modify (\st@ParseState{..} -> st{ accum = text_and_newlines <> accum })
@@ -578,7 +588,7 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
                   Right new' -> do
                     if List.null stTail
                        then do
-                         modify (\st@ParseState{..} -> st{ accum = new' : accum, stack = stTail, saccum = [] :: [Tuple Int BBCode] })
+                         modify (\st@ParseState{..} -> st{ accum = new' : accum, stack = stTail, saccum = [] })
                          go tail (level-1)
                        else do
                          modify (\st -> st{ saccum = (Tuple level new' : beneath), stack = stTail })
