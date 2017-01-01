@@ -31,18 +31,18 @@ spec = do
   describe "concatTokens" $ do
     it "concatenates subsequent BBStr tokens into one BBStr token" $ do
 
-     concatTokens (Cons (BBStr "ping") (Cons (BBStr " ") (Cons (BBStr "pong") Nil)))
-       `shouldBe` (Cons (BBStr "ping pong") Nil)
+     concatTokens [BBStr "ping", BBStr " ", BBStr "pong"]
+       `shouldBe` [BBStr "ping pong"]
 
-     concatTokens (Cons (BBStr "ping") (Cons (BBOpen Nothing "b") (Cons (BBStr "pong") Nil)))
-       `shouldBe` (Cons (BBStr "ping") (Cons (BBOpen Nothing "b") (Cons (BBStr "pong") Nil)))
+     concatTokens [BBStr "ping", BBOpen Nothing "b", BBStr "pong"]
+       `shouldBe` [BBStr "ping", BBOpen Nothing "b", BBStr "pong"]
 
 
 
   describe "concatBBStr" $ do
     it "concatenates subsequent BBStr tokens into one BBStr token" $ do
 
-     concatBBStr (Cons (BBStr "ping") (Cons (BBStr " ") (Cons (BBStr "pong") Nil)))
+     concatBBStr [BBStr "ping", BBStr " ", BBStr "pong"]
        `shouldBe` (BBStr "ping pong")
 
 
@@ -96,25 +96,25 @@ spec = do
 
 
       parseTokens' "hello"
-        `shouldBe` (Right $ Cons (BBStr "hello") Nil)
+        `shouldBe` (Right $ [BBStr "hello"])
 
       parseTokens' "["
-        `shouldBe` (Right $ Cons (BBStr "[") Nil)
+        `shouldBe` (Right $ [BBStr "["])
 
       parseTokens' "]"
-        `shouldBe` (Right $ Cons (BBStr "]") Nil)
+        `shouldBe` (Right $ [BBStr "]"])
 
       parseTokens' "[ b ]"
-        `shouldBe` (Right $ Cons (BBStr "[ b ]") Nil)
+        `shouldBe` (Right $ [BBStr "[ b ]"])
 
       parseTokens' "[/ b ]"
-        `shouldBe` (Right $ Cons (BBStr "[/ b ]") Nil)
+        `shouldBe` (Right $ [BBStr "[/ b ]"])
 
       parseTokens' "[b]hello[/b]"
-        `shouldBe` (Right $ Cons (BBOpen Nothing "b") (Cons (BBStr "hello") (Cons (BBClosed "b") Nil)))
+        `shouldBe` (Right $ [BBOpen Nothing "b", BBStr "hello", BBClosed "b"])
 
       parseTokens' "[B]hello[/B]"
-        `shouldBe` (Right $ Cons (BBOpen Nothing "b") (Cons (BBStr "hello") (Cons (BBClosed "b") Nil)))
+        `shouldBe` (Right $ [BBOpen Nothing "b", BBStr "hello", BBClosed "b"])
 
       flattenTokens <$> parseTokens' "[b][u]hello[/u][/b]"
         `shouldBe` (Right "BBOpen Nothing \"b\",BBOpen Nothing \"u\",BBStr \"hello\",BBClosed \"u\",BBClosed \"b\"")
@@ -143,41 +143,41 @@ spec = do
     it "parses a string into bbcode tags" $ do
 
       parseBBCode "hello"
-        `shouldBe` (Right $ Cons (Text "hello") Nil)
+        `shouldBe` (Right $ [Text "hello"])
 
       parseBBCode "/:?"
-        `shouldBe` (Right $ Cons (Text "/:?") Nil)
+        `shouldBe` (Right $ [Text "/:?"])
 
       parseBBCode "["
-        `shouldBe` (Right $ Cons (Text "[") Nil)
+        `shouldBe` (Right $ [Text "["])
 
       parseBBCode "]"
-        `shouldBe` (Right $ Cons (Text "]") Nil)
+        `shouldBe` (Right $ [Text "]"])
 
       parseBBCode "[ b ]"
-        `shouldBe` (Right $ Cons (Text "[ b ]") Nil)
+        `shouldBe` (Right $ [Text "[ b ]"])
 
       parseBBCode "[/ b ]"
-        `shouldBe` (Right $ Cons (Text "[/ b ]") Nil)
+        `shouldBe` (Right $ [Text "[/ b ]"])
 
       parseBBCode "[/b]hello"
         `shouldBe` (Left "b not pushed")
 
       parseBBCode "90 [degree] angle"
-        `shouldBe` (Right $ Cons (Text "90 ") (Cons (Text "[degree]") (Cons (Text " angle") Nil)))
+        `shouldBe` (Right $ [Text "90 ", Text "[degree]", Text " angle"])
 
       parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "90 [degree] angle [b]yo[/b]"
-        `shouldBe` (Right $ Cons (Text "90 ") (Cons (Text "[degree]") (Cons (Text " angle ") (Cons (Bold (Cons (Text "yo") Nil)) Nil))))
+        `shouldBe` (Right $ [Text "90 ", Text "[degree]", Text " angle ", Bold [Text "yo"]])
 
       parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "90 [degree] angle"
-        `shouldBe` (Right $ Cons (Text "90 ") (Cons (Text "[degree]") (Cons (Text " angle") Nil)))
+        `shouldBe` (Right $ [Text "90 ", Text "[degree]", Text " angle"])
 
       parseBBCode "[b]hello"
         `shouldBe` (Left "b not closed")
 
       -- TODO FIXME: should be [b]hello, not [b]
       parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[b]hello"
-        `shouldBe` (Right $ Cons (Text "[b]") Nil)
+        `shouldBe` (Right $ [Text "[b]"])
 
       parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt]hello"
         `shouldBe` (Right $ [Text "[tt]", Text "hello"])
@@ -190,26 +190,19 @@ spec = do
       --   `shouldBe` (Right $ [Text "[tt]", Text "[sup]", Text "hello", Text "[/tt]", Text "[/sup]", Text "bye"])
 
       parseBBCode "[b]hello[/b]"
-        `shouldBe` (Right $ Cons (Bold (Cons (Text "hello") Nil)) Nil)
+        `shouldBe` (Right $ [Bold [Text "hello"]])
 
       parseBBCode "[b]https://adarq.org[/b]"
-        `shouldBe` (Right $ Cons (Bold (Cons (Text "https://adarq.org") Nil)) Nil)
+        `shouldBe` (Right $ [Bold [Text "https://adarq.org"]])
 
       parseBBCode "[u][b]hello[/b][/u]"
-        `shouldBe` (Right $ Cons (Underline (Cons (Bold (Cons (Text "hello") Nil)) Nil)) Nil)
+        `shouldBe` (Right $ [Underline [Bold [Text "hello"]]])
 
       parseBBCode "[i][u][b]hello[/b][/u][/i]"
-        `shouldBe` (Right $ Cons (Italic (Cons (Underline (Cons (Bold (Cons (Text "hello") Nil)) Nil)) Nil)) Nil)
+        `shouldBe` (Right $ [Italic [Underline [Bold [Text "hello"]]]])
 
       parseBBCode "ping[b]hello[/b]pong"
-        `shouldBe`
-          (Right $
-            Cons
-              (Text "ping")
-              (Cons
-                (Bold (Cons (Text "hello") Nil))
-              (Cons (Text "pong") Nil))
-          )
+        `shouldBe` (Right $ [Text "ping", Bold [Text "hello"], Text "pong"])
 
       parseBBCode "zero[u]one[b]two[/b]three[/u]four"
         `shouldBe` (Right (Cons (Text("zero")) (Cons (Underline(Cons (Text("one")) (Cons (Bold(Cons (Text("two")) (Nil))) (Cons (Text("three")) (Nil))))) (Cons (Text("four")) (Nil)))))
