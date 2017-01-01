@@ -562,7 +562,11 @@ parseBBCodeFromTokens' bmap umap cmap toks = do
 
           BBClosed tag      -> do
             case List.uncons stack of
-              Nothing -> pure $ Left $ tag <> " not pushed"
+              Nothing -> do
+                allow_not_closed <- asks allowNotClosed
+                if allow_not_closed
+                  then pure $ Right $ List.reverse $ Text ("[/"<>tag<>"]") : accum
+                  else pure $ Left $ tag <> " not pushed"
               Just ((params, tag), stTail) -> do
                 let
                   beneath = List.filter (\(Tuple l v) -> l < level) saccum

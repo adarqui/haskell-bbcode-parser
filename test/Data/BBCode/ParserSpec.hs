@@ -179,6 +179,16 @@ spec = do
       parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[b]hello"
         `shouldBe` (Right $ Cons (Text "[b]") Nil)
 
+      parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt]hello"
+        `shouldBe` (Right $ [Text "[tt]", Text "hello"])
+
+      parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt]hello[/tt]"
+        `shouldBe` (Right $ [Text "[tt]", Text "hello", Text "[/tt]"])
+
+      -- TODO FIXME: Broken
+      -- parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt][sup]hello[/tt][/sup]"
+      --   `shouldBe` (Right $ [Text "[tt]", Text "[sup]", Text "hello", Text "[/tt]", Text "[/sup]"])
+
       parseBBCode "[b]hello[/b]"
         `shouldBe` (Right $ Cons (Bold (Cons (Text "hello") Nil)) Nil)
 
