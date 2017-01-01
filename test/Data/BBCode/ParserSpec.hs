@@ -205,32 +205,32 @@ spec = do
         `shouldBe` (Right $ [Text "ping", Bold [Text "hello"], Text "pong"])
 
       parseBBCode "zero[u]one[b]two[/b]three[/u]four"
-        `shouldBe` (Right (Cons (Text("zero")) (Cons (Underline(Cons (Text("one")) (Cons (Bold(Cons (Text("two")) (Nil))) (Cons (Text("three")) (Nil))))) (Cons (Text("four")) (Nil)))))
+        `shouldBe` (Right [Text "zero", Underline [Text "one", Bold [Text "two"], Text"three"], Text "four"])
 
       parseBBCode "[youtube]https://www.youtube.com/watch?v=video[/youtube]"
-        `shouldBe` (Right (Cons (Youtube "https://www.youtube.com/watch?v=video") Nil))
+        `shouldBe` (Right [Youtube "https://www.youtube.com/watch?v=video"])
 
       parseBBCode "[hr]"
-        `shouldBe` (Right (Cons HR Nil))
+        `shouldBe` (Right [HR])
 
       parseBBCode "\n"
-        `shouldBe` (Right (Cons NL Nil))
+        `shouldBe` (Right [NL])
 
       parseBBCode "\n\n"
-        `shouldBe` (Right (Cons NL (Cons NL Nil)))
+        `shouldBe` (Right [NL, NL])
 
       parseBBCode "hi\n"
-        `shouldBe` (Right (Cons (Text "hi") (Cons NL Nil)))
+        `shouldBe` (Right [Text "hi", NL])
 
       parseBBCode "\nhi"
-        `shouldBe` (Right (Cons NL (Cons (Text "hi") Nil)))
+        `shouldBe` (Right [NL, Text "hi"])
 
       parseBBCode "I am the [b]best[/b] man, I [b]deed[/b] it. [b]yup[/b]"
         `shouldBe`
-          (Right (Cons (Text("I am the ")) (Cons (Bold(Cons (Text("best")) (Nil))) (Cons (Text(" man, I ")) (Cons (Bold(Cons (Text("deed")) (Nil))) (Cons (Text(" it. ")) (Cons (Bold(Cons (Text("yup")) (Nil))) (Nil))))))))
+          (Right [Text "I am the ", Bold [Text "best"], Text " man, I ", Bold [Text "deed"], Text " it. ", Bold [Text "yup" ]])
 
       parseBBCode "[url=someUrl]name[/url]"
-        `shouldBe` (Right $ Cons (Link (Just "name") "someUrl") Nil)
+        `shouldBe` (Right $ [Link (Just "name") "someUrl"])
 
       let
         bigString n      = Text.replicate n "A"
@@ -238,22 +238,22 @@ spec = do
         big_string_10024 = bigString 10024
 
       parseBBCode ("[b]" <> big_string_1024 <> "[/b]")
-        `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_1024) Nil)) Nil)
+        `shouldBe` (Right $ [Bold [Text big_string_1024]])
 
       parseBBCode ("[b]" <> big_string_10024 <> "[/b]")
-        `shouldBe` (Right $ Cons (Bold (Cons (Text big_string_10024) Nil)) Nil)
+        `shouldBe` (Right $ [Bold [Text big_string_10024]])
 
       parseBBCode "[quote]hello[/quote]"
-        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
+        `shouldBe` (Right $ [Quote Nothing Nothing Nothing Nothing [Text "hello"]])
 
       parseBBCode "[quote meta=poop]hello[/quote meta=poop]"
-        `shouldBe` (Right $ Cons (Quote Nothing Nothing Nothing Nothing (Cons (Text "hello") Nil)) Nil)
+        `shouldBe` (Right $ [Quote Nothing Nothing Nothing Nothing [Text "hello"]])
 
       parseBBCode "[quote author=author avatar=avatar link=link date=1306339931]hello[/quote]"
-        `shouldBe` (Right $ Cons (Quote (Just "author") (Just "avatar") (Just "link") (Just "1306339931") (Cons (Text "hello") Nil)) Nil)
+        `shouldBe` (Right $ [Quote (Just "author") (Just "avatar") (Just "link") (Just "1306339931") [Text "hello"]])
 
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) ":ninja:"
-        `shouldBe` (Right $ Cons (Emoticon "ninja") Nil)
+        `shouldBe` (Right $ [Emoticon "ninja"])
 
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "hi :)..."
         `shouldBe` (Right $ [Text "hi ", Emoticon "smile", Text "..."])
