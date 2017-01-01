@@ -8,7 +8,6 @@ module Data.BBCode.ParserSpec (
 
 
 import           Data.BBCode.Emoticon
-import           Data.BBCode.Internal
 import           Data.BBCode.Parser
 import           Data.BBCode.Types
 import           Data.Monoid          ((<>))
