@@ -185,9 +185,9 @@ spec = do
       parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt]hello[/tt]"
         `shouldBe` (Right $ [Text "[tt]", Text "hello", Text "[/tt]"])
 
-      -- TODO FIXME: Broken
-      -- parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt][sup]hello[/tt][/sup]"
-      --   `shouldBe` (Right $ [Text "[tt]", Text "[sup]", Text "hello", Text "[/tt]", Text "[/sup]"])
+      -- TODO FIXME: this should work, need to re-write the "unsupported bbcode" portion of the parser
+      -- parseBBCodeWith (defaultParseReader { allowNotClosed = True }) "[tt][sup]hello[/tt][/sup]bye"
+      --   `shouldBe` (Right $ [Text "[tt]", Text "[sup]", Text "hello", Text "[/tt]", Text "[/sup]", Text "bye"])
 
       parseBBCode "[b]hello[/b]"
         `shouldBe` (Right $ Cons (Bold (Cons (Text "hello") Nil)) Nil)
