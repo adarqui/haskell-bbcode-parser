@@ -258,6 +258,9 @@ spec = do
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "hi :)..."
         `shouldBe` (Right $ [Text "hi ", Emoticon "smile", Text "..."])
 
+      parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "[b]:ninja:[/b]"
+        `shouldBe` (Right $ [Bold [Emoticon "ninja"]])
+
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "[quote]:ninja:[/quote]"
         `shouldBe` (Right $ [Quote Nothing Nothing Nothing Nothing [Emoticon "ninja"]])
 

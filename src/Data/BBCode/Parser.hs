@@ -139,7 +139,7 @@ tokens = many' token
 -- | concat consecutive BBStr's
 --
 concatTokens :: List Token -> List Token
-concatTokens = go Nil
+concatTokens = go []
   where
   go accum xs =
     case List.uncons xs of
@@ -241,7 +241,7 @@ runFont :: BBCodeFn
 runFont m_params xs =
   case m_params of
        Nothing   -> Right $ Font defaultFontOpts xs
-       Just font -> Right $ Font (FontOpts { fontFamily = Just font, fontFaces = Nil }) xs
+       Just font -> Right $ Font (FontOpts { fontFamily = Just font, fontFaces = [] }) xs
        -- TODO FIXME: font faces
 
 runSize :: BBCodeFn
@@ -319,7 +319,7 @@ runQuote m_params xs =
         m_date    = Map.lookup "date" param_map
 
 runLink :: BBCodeFn
-runLink m_params (Cons (Text s) Nil) =
+runLink m_params [Text s] =
   case m_params of
        Nothing   -> Right $ Link Nothing s
        Just url  -> Right $ Link (Just s) url
@@ -335,12 +335,12 @@ runMove :: BBCodeFn
 runMove = runTextSimple Move "Move"
 
 runNL :: BBCodeFn
-runNL _ Nil = Right $ NL
-runNL _ _   = Left $ "nl error"
+runNL _ [] = Right $ NL
+runNL _ _  = Left $ "nl error"
 
 runHR :: BBCodeFn
-runHR _ Nil = Right $ HR
-runHR _ _   = Left "hr error"
+runHR _ [] = Right $ HR
+runHR _ _  = Left "hr error"
 
 --
 -- TODO FIXME: media needs proper url parsing/verification
@@ -372,17 +372,17 @@ runImage = runMedia (Image defaultImageOpts) "Image"
 --
 
 runTextSimple :: (List BBCode -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
-runTextSimple _ tag _ Nil = Left $ tag <> " error"
-runTextSimple mk _ _ t    = Right $ mk t
+runTextSimple _ tag _ [] = Left $ tag <> " error"
+runTextSimple mk _ _ t   = Right $ mk t
 
 runRaw :: (Text -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
-runRaw mk _ _ (Cons (Text raw) Nil) = Right $ mk raw
-runRaw _ tag _ _                    = Left $ tag <> " error"
+runRaw mk _ _ [Text raw] = Right $ mk raw
+runRaw _ tag _ _         = Left $ tag <> " error"
 
 runMedia :: (Text -> BBCode) -> TagName -> Maybe Parameters -> List BBCode -> Either ErrorMsg BBCode
-runMedia mk _ _ (Cons (Text url) Nil)  = Right $ mk url
-runMedia _ tag _ (Cons _ Nil)          = Left $ tag <> " error: only urls may be wrapped in " <> tag
-runMedia _ tag _ _                     = Left $ tag <> " error"
+runMedia mk _ _ [Text url] = Right $ mk url
+runMedia _ tag _ (_:[])    = Left $ tag <> " error: only urls may be wrapped in " <> tag
+runMedia _ tag _ _         = Left $ tag <> " error"
 
 
 
@@ -444,7 +444,7 @@ defaultConsumeBBCodeMap =
 -- | TODO FIXME: worst function ever.. my brain is not working
 --
 parseTextAndNewlines :: Text -> List BBCode
-parseTextAndNewlines = go Nil
+parseTextAndNewlines = go []
   where
   go acc "" = acc
   go acc s  =
@@ -514,13 +514,14 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
     case List.uncons toks' of
       Nothing -> do
         case stack of
-          Nil                    -> do
+          []              -> do
             m_emoticons_map <- asks emoticons
             let accum' = case m_emoticons_map of
                            Just (emoticons_bimap, _) -> textAndEmoticons emoticons_bimap accum
                            Nothing                   -> List.reverse accum
             pure $ Right accum'
-          (Cons (Tuple _ tag) _) -> do
+          (Tuple _ tag:_) -> do
+            -- TODO FIXME: Add emoticon check here?
             allow_not_closed <- asks allowNotClosed
             if allow_not_closed
               then pure $ Right $ List.reverse $ Text ("["<>tag<>"]") : accum
@@ -546,7 +547,7 @@ parseBBCodeFromTokens' bmap umap cmap toks = go toks 0
             -- 3. a normal bbcode operator which has an open tag, content, and a closing tag
             if Map.member tag umap
                then do
-                 case (runBBCode params tag Nil umap) of
+                 case (runBBCode params tag [] umap) of
                    Left err   -> pure $ Left err
                    Right new' -> do
                      modify (\st@ParseState{..} -> st{ accum = (new' : accum) })
