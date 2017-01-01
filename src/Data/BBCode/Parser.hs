@@ -307,8 +307,10 @@ runAlignRight = runTextSimple AlignRight "Right"
 runQuote :: BBCodeFn
 runQuote m_params xs =
   case m_params of
-       Nothing     -> runTextSimple (Quote Nothing Nothing Nothing Nothing) "Quote" Nothing xs
-       Just params -> runTextSimple (Quote m_author m_avatar m_link m_date) "Quote" Nothing xs
+       -- Nothing     -> runTextSimple (Quote Nothing Nothing Nothing Nothing) "Quote" Nothing xs
+       -- Just params -> runTextSimple (Quote m_author m_avatar m_link m_date) "Quote" Nothing xs
+       Nothing     -> Right $ Quote Nothing Nothing Nothing Nothing xs
+       Just params -> Right $ Quote m_author m_avatar m_link m_date xs
         where
         param_map = buildParamMap params
         m_author  = Map.lookup "author" param_map

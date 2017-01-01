@@ -255,6 +255,18 @@ spec = do
       parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "hi :)..."
         `shouldBe` (Right $ Cons (Text "hi ") (Cons (Emoticon "smile") (Cons (Text "...") Nil)))
 
+      -- parseBBCodeWith (defaultParseReader { emoticons = Just defaultEmoticons }) "[quote]:ninja:[/quote]"
+      --   `shouldBe` (Right $ [Quote Nothing Nothing Nothing Nothing [Emoticon "ninja"]])
+
+      parseBBCode "[size 18px]hi[/size]"
+        `shouldBe` (Right $ [Size (SizeOpts { sizeValue = Just $ SizePx 18 }) [Text "hi"]])
+
+      parseBBCode "[size 18pt]hi[/size]"
+        `shouldBe` (Right $ [Size (SizeOpts { sizeValue = Just $ SizePt 18 }) [Text "hi"]])
+
+      parseBBCode "[size 18em]hi[/size]"
+        `shouldBe` (Right $ [Size (SizeOpts { sizeValue = Just $ SizeEm 18 }) [Text "hi"]])
+
 --    Assert.equal
 --      (Right $ Cons ..
 --      $ parseBBCode "[quote author=adarqui]hello[/quote]"
