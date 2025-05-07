@@ -1,3 +1,4 @@
+*.lock
 *.hi
 *.o
 *.p_hi
